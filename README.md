@@ -33,7 +33,15 @@ This script is ideal for projects where you need to curate a collection of image
 - *(Optional)* [nsfw_detector](https://github.com/infinitered/nsfwjs) for NSFW filtering
 
 ### Install Dependencies
+```bash
+git clone https://github.com/rawatrob/Photo-Culling.git
 
+
+```
+```bash
+cd Photo-Culling
+
+```
 Install the necessary packages using pip:
 
 ```bash
@@ -55,3 +63,9 @@ Example
 ```bash
 python image_culling.py ./input_images ./output_images --blur_threshold 100 --brightness_threshold 50 --nsfw_threshold 0.7
 ```
+
+
+---
+## License
+
+This project is licensed under the MIT License -
