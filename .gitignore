@@ -222,3 +222,6 @@ logs/
 # Configuration files with sensitive data
 config.json
 settings.json
+
+input/
+output/

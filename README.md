@@ -1,4 +1,34 @@
-# Image Culling Pipeline
+# Image Culling Pipeline - Enhanced Version
+
+A Python-based image culling pipeline that automatically processes and **organizes** images into categorized folders for easy manual review.
+
+## Key Features
+
+- **Intelligent Organization:** Instead of just keeping "good" images, this script now organizes ALL images into categorized folders, making manual review much easier.
+- **Duplicate Detection:** Uses perceptual hashing to identify and separate duplicate images.
+- **Quality Assessment:** Filters images based on blurriness and brightness levels.
+- **NSFW Filtering:** Optional NSFW content detection and separation.
+- **Smart Ranking:** Quality-based ranking of approved images with detailed scoring.
+
+## Output Structure
+
+The script creates an organized folder structure for easy review:
+
+```
+output/
+├── selected/     📸 High-quality images (ranked: 001_85.23_IMG_0001.JPG)
+├── duplicates/   🔄 Duplicate images detected
+├── blurry/       💫 Images that are too blurry  
+├── low_light/    🌑 Images that are too dark
+├── nsfw/         🔞 NSFW content (if detection enabled)
+└── failed/       ❌ Images that failed processing
+```
+
+**Benefits:**
+- **Easy Recovery:** Quickly review and recover images from any category
+- **Manual Override:** Final decision remains with you
+- **Quality Insights:** Understand why images were categorized
+- **Batch Processing:** Process thousands of images efficientlylling Pipeline
 
 A Python-based image culling pipeline that automatically processes a folder of images by:
 

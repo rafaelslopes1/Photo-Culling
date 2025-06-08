@@ -1,18 +1,30 @@
 #!/usr/bin/env python3
 """
-Image Culling Pipeline
+Image Culling Pipeline - Enhanced Version
 
 Usage:
     python image_culling.py <input_folder> <output_folder> [--nsfw_model path/to/model.h5]
          [--blur_threshold 100] [--brightness_threshold 50] [--nsfw_threshold 0.7]
 
-This script:
-  - Reads images from the input folder.
-  - Detects and skips duplicates (using perceptual hashing).
-  - Filters out images that are blurry or low in brightness.
-  - Optionally, filters out NSFW images (if an NSFW model file is provided).
-  - Calculates a quality score (combining sharpness and brightness) for each image.
-  - Ranks images and copies them to the output folder (renamed with ranking)
+This script processes images and organizes them into categorized folders for easy manual review:
+
+Input Processing:
+  - Reads images from the input folder
+  - Detects and categorizes duplicates (using perceptual hashing)
+  - Filters images based on quality metrics (blur, brightness)
+  - Optionally filters NSFW content (if model provided)
+  - Calculates quality scores for approved images
+
+Output Organization:
+  📁 output/
+    ├── selected/     - High-quality images ranked by score (001_85.23_IMG_0001.JPG)
+    ├── duplicates/   - Duplicate images detected
+    ├── blurry/       - Images that are too blurry
+    ├── low_light/    - Images that are too dark
+    ├── nsfw/         - NSFW content (if detection enabled)
+    └── failed/       - Images that failed processing
+
+This organization allows for easy manual review and recovery of images as needed.
 """
 
 import os
@@ -126,56 +138,134 @@ def quality_score(image_path):
 def process_images(input_folder, output_folder, nsfw_model=None,
                    blur_threshold=100, brightness_threshold=50, nsfw_threshold=0.7):
     """
-    Process all images in the input folder:
-      - Skip duplicates
-      - Skip images failing NSFW, blurriness, or low brightness checks
-      - Compute quality score for remaining images
-      - Rank images and copy them to the output folder (renamed with ranking)
+    Process all images in the input folder and organize them into categorized folders:
+      - selected: Images that passed all filters (ranked by quality)
+      - duplicates: Duplicate images
+      - blurry: Images that are too blurry
+      - low_light: Images that are too dark
+      - nsfw: NSFW images (if NSFW detection is enabled)
+      - failed: Images that could not be processed
     """
+    # Create organized output folders
+    folders = {
+        'selected': os.path.join(output_folder, 'selected'),
+        'duplicates': os.path.join(output_folder, 'duplicates'),
+        'blurry': os.path.join(output_folder, 'blurry'),
+        'low_light': os.path.join(output_folder, 'low_light'),
+        'nsfw': os.path.join(output_folder, 'nsfw'),
+        'failed': os.path.join(output_folder, 'failed')
+    }
+    
+    for folder_path in folders.values():
+        os.makedirs(folder_path, exist_ok=True)
+    
+    print("Pastas de saída criadas:")
+    for category, path in folders.items():
+        print(f"  - {category}: {path}")
+    print()
+
     duplicates = find_duplicates(input_folder)
     ranked_images = []
+    stats = {
+        'total': 0,
+        'selected': 0,
+        'duplicates': len(duplicates),
+        'blurry': 0,
+        'low_light': 0,
+        'nsfw': 0,
+        'failed': 0,
+        'skipped': 0
+    }
 
     for image_name in os.listdir(input_folder):
         image_path = os.path.join(input_folder, image_name)
         # Only process image files
         if not image_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+            stats['skipped'] += 1
             continue
+        
+        stats['total'] += 1
+        original_filename = os.path.basename(image_path)
 
-        # Skip duplicates
-        if image_path in duplicates:
-            print(f"Skipping duplicate image: {image_path}")
-            continue
+        try:
+            # Handle duplicates
+            if image_path in duplicates:
+                dest_path = os.path.join(folders['duplicates'], original_filename)
+                shutil.copy(image_path, dest_path)
+                print(f"Duplicata movida: {original_filename}")
+                continue
 
-        # NSFW filtering (if model provided)
-        if nsfw_model and is_nsfw(image_path, nsfw_model, nsfw_threshold):
-            print(f"Skipping NSFW image: {image_path}")
-            continue
+            # NSFW filtering (if model provided)
+            if nsfw_model and is_nsfw(image_path, nsfw_model, nsfw_threshold):
+                dest_path = os.path.join(folders['nsfw'], original_filename)
+                shutil.copy(image_path, dest_path)
+                stats['nsfw'] += 1
+                print(f"NSFW detectado: {original_filename}")
+                continue
 
-        # Check for low quality (blurry or low light)
-        if is_blurry(image_path, blur_threshold) or is_low_light(image_path, brightness_threshold):
-            print(f"Skipping low-quality image: {image_path}")
-            continue
+            # Check for blurriness
+            if is_blurry(image_path, blur_threshold):
+                dest_path = os.path.join(folders['blurry'], original_filename)
+                shutil.copy(image_path, dest_path)
+                stats['blurry'] += 1
+                print(f"Imagem borrada: {original_filename}")
+                continue
 
-        # If the image passes all filters, calculate its quality score.
-        score = quality_score(image_path)
-        ranked_images.append((image_path, score))
-        print(f"Accepted: {image_path} (Score: {score:.2f})")
+            # Check for low light
+            if is_low_light(image_path, brightness_threshold):
+                dest_path = os.path.join(folders['low_light'], original_filename)
+                shutil.copy(image_path, dest_path)
+                stats['low_light'] += 1
+                print(f"Imagem muito escura: {original_filename}")
+                continue
 
-    # Sort images by quality score in descending order (best first)
+            # If the image passes all filters, calculate its quality score
+            score = quality_score(image_path)
+            ranked_images.append((image_path, score))
+            stats['selected'] += 1
+            print(f"Imagem aprovada: {original_filename} (Score: {score:.2f})")
+
+        except Exception as e:
+            # Handle images that failed to process
+            dest_path = os.path.join(folders['failed'], original_filename)
+            try:
+                shutil.copy(image_path, dest_path)
+                stats['failed'] += 1
+                print(f"Erro ao processar (movida para 'failed'): {original_filename} - {e}")
+            except Exception as copy_error:
+                print(f"Erro crítico ao processar {original_filename}: {e} (Erro de cópia: {copy_error})")
+
+    # Sort selected images by quality score in descending order (best first)
     ranked_images.sort(key=lambda x: x[1], reverse=True)
 
-    # Copy images to output folder with new filenames that reflect their ranking.
+    # Copy selected images to the selected folder with ranking
     for idx, (img_path, score) in enumerate(ranked_images):
-        ext = os.path.splitext(img_path)[1]
-        dest_filename = f"{idx + 1:03d}_{score:.2f}{ext}"
-        dest_path = os.path.join(output_folder, dest_filename)
+        original_name = os.path.basename(img_path)
+        name, ext = os.path.splitext(original_name)
+        dest_filename = f"{idx + 1:03d}_{score:.2f}_{name}{ext}"
+        dest_path = os.path.join(folders['selected'], dest_filename)
         try:
             shutil.copy(img_path, dest_path)
-            print(f"Copied {img_path} -> {dest_path}")
         except Exception as e:
-            print(f"Error copying {img_path} to {dest_path}: {e}")
+            print(f"Erro ao copiar {img_path} para pasta 'selected': {e}")
 
-    print("\nProcessing complete. Total images selected:", len(ranked_images))
+    # Print final statistics
+    print("\n" + "="*60)
+    print("RELATÓRIO FINAL DE PROCESSAMENTO")
+    print("="*60)
+    print(f"Total de arquivos processados: {stats['total']}")
+    print(f"Arquivos não-imagem ignorados: {stats['skipped']}")
+    print(f"")
+    print(f"📸 Imagens SELECIONADAS: {stats['selected']}")
+    print(f"🔄 Duplicatas encontradas: {stats['duplicates']}")
+    print(f"💫 Imagens borradas: {stats['blurry']}")
+    print(f"🌑 Imagens muito escuras: {stats['low_light']}")
+    if nsfw_model:
+        print(f"🔞 Imagens NSFW: {stats['nsfw']}")
+    print(f"❌ Falhas no processamento: {stats['failed']}")
+    print(f"")
+    print("Todas as imagens foram organizadas nas pastas correspondentes para facilitar sua revisão manual!")
+    print("="*60)
 
 
 def main():
