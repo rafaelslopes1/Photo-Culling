@@ -1,101 +1,138 @@
-# Image Culling Pipeline - Enhanced Version
+# Photo Culling System
 
-A Python-based image culling pipeline that automatically processes and **organizes** images into categorized folders for easy manual review.
+Um sistema completo de organização e rotulagem de imagens com interface web moderna.
 
-## Key Features
+## � Funcionalidades Principais
 
-- **Intelligent Organization:** Instead of just keeping "good" images, this script now organizes ALL images into categorized folders, making manual review much easier.
-- **Duplicate Detection:** Uses perceptual hashing to identify and separate duplicate images.
-- **Quality Assessment:** Filters images based on blurriness and brightness levels.
-- **NSFW Filtering:** Optional NSFW content detection and separation.
-- **Smart Ranking:** Quality-based ranking of approved images with detailed scoring.
+- **Interface Web Intuitiva:** Sistema de rotulagem manual com interface responsiva e moderna
+- **Processamento Automático:** Pipeline de análise automática para organização de imagens
+- **Detecção de Qualidade:** Avaliação automática baseada em nitidez e brilho
+- **Detecção de Duplicatas:** Identificação de imagens duplicadas usando hash perceptual
+- **Base de Dados Persistente:** Armazenamento de rótulos e metadados em SQLite
 
-## Output Structure
+## 📁 Estrutura do Projeto
 
-The script creates an organized folder structure for easy review:
+```
+Photo-Culling/
+├── web_labeling/           # Interface web de rotulagem manual
+│   ├── app.py             # Servidor Flask
+│   ├── templates/         # Templates HTML
+│   │   └── index.html     # Interface principal
+│   ├── data/              # Base de dados e backups
+│   │   ├── labels.db      # SQLite database
+│   │   └── labels.json    # Backup JSON
+│   └── requirements.txt   # Dependências do web app
+├── image_culling.py       # Pipeline de processamento automático
+├── advanced_*.py          # Módulos de detecção avançada
+├── config.json           # Configurações do sistema
+├── input/                # Pasta de imagens de entrada
+└── requirements.txt      # Dependências principais
+```
+
+## � Como Usar
+
+### Interface Web (Recomendado)
+
+1. **Instalar dependências:**
+```bash
+cd web_labeling
+pip install -r requirements.txt
+```
+
+2. **Executar o servidor:**
+```bash
+python app.py
+```
+
+3. **Acessar a interface:**
+   - Abra seu navegador em `http://localhost:5002`
+   - Use os atalhos de teclado para rotulagem rápida
+   - Pressione `I` para mostrar/ocultar informações da imagem
+
+### Pipeline Automático
+
+1. **Instalar dependências:**
+```bash
+pip install -r requirements.txt
+```
+
+2. **Executar processamento:**
+```bash
+python image_culling.py input/ output/
+```
+
+## ⌨️ Atalhos de Teclado (Interface Web)
+
+- **Navegação:**
+  - `←` ou `A`: Imagem anterior
+  - `→` ou `D`: Próxima imagem
+  - `Space`: Próxima imagem
+
+- **Rotulagem:**
+  - `1-6`: Aplicar rótulos 1-6
+  - `Q`: Rejeitar (qualidade ruim)
+  - `R`: Rejeitar (conteúdo inapropriado)
+
+- **Interface:**
+  - `I`: Mostrar/ocultar informações da imagem
+  - `Esc`: Fechar modais
+
+## 🛠️ Configuração
+
+Personalize o comportamento através do arquivo `config.json`:
+
+```json
+{
+  "processing_settings": {
+    "blur_threshold": 100,
+    "brightness_threshold": 50,
+    "nsfw_threshold": 0.7,
+    "quality_score_weights": {
+      "sharpness": 1.0,
+      "brightness": 1.0
+    },
+    "image_extensions": [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff", ".webp"]
+  },
+  "output_folders": {
+    "selected": "selected",
+    "duplicates": "duplicates", 
+    "blurry": "blurry",
+    "low_light": "low_light",
+    "nsfw": "nsfw",
+    "failed": "failed"
+  }
+}
+```
+
+## 📋 Requisitos
+
+- Python 3.7+
+- OpenCV (`opencv-python`)
+- Pillow
+- ImageHash
+- NumPy
+- Flask (para interface web)
+- SQLite3
+
+## 💡 Dicas
+
+- Use a interface web para rotulagem manual precisa
+- Configure os thresholds no `config.json` conforme suas necessidades
+- Mantenha backups regulares da base de dados de rótulos
+- Use atalhos de teclado para acelerar o processo de rotulagem
+
+## 📈 Estrutura de Saída (Pipeline Automático)
 
 ```
 output/
-├── selected/     📸 High-quality images (ranked: 001_85.23_IMG_0001.JPG)
-├── duplicates/   🔄 Duplicate images detected
-├── blurry/       💫 Images that are too blurry  
-├── low_light/    🌑 Images that are too dark
-├── nsfw/         🔞 NSFW content (if detection enabled)
-└── failed/       ❌ Images that failed processing
+├── selected/     📸 Imagens de alta qualidade (ranqueadas)
+├── duplicates/   🔄 Imagens duplicadas detectadas
+├── blurry/       💫 Imagens desfocadas
+├── low_light/    🌑 Imagens muito escuras
+├── nsfw/         🔞 Conteúdo inapropriado (se habilitado)
+└── failed/       ❌ Imagens que falharam no processamento
 ```
 
-**Benefits:**
-- **Easy Recovery:** Quickly review and recover images from any category
-- **Manual Override:** Final decision remains with you
-- **Quality Insights:** Understand why images were categorized
-- **Batch Processing:** Process thousands of images efficientlylling Pipeline
-
-A Python-based image culling pipeline that automatically processes a folder of images by:
-
-- **Removing duplicate images** using perceptual hashing.
-- **Filtering out low-quality images** based on blurriness (using the variance of the Laplacian) and low brightness.
-- **Optionally filtering NSFW images** using a pre-trained NSFW detection model.
-- **Ranking and selecting the “best” images** by combining a quality score (sharpness + brightness).
-
-This script is ideal for projects where you need to curate a collection of images by discarding duplicates and images that don’t meet your quality standards.
-
-## Features
-
-- **Duplicate Detection:**  
-  Leverages the `imagehash` library to identify and remove duplicate images.
-
-- **Quality Assessment:**  
-  - **Blurriness Detection:** Uses OpenCV to compute the variance of the Laplacian.  
-  - **Brightness Evaluation:** Analyzes the average brightness from the HSV color space.
-  
-- **NSFW Filtering (Optional):**  
-  Integrates with an NSFW detection model (if provided) to filter out inappropriate content.
-
-- **Ranking:**  
-  Computes a combined quality score (sharpness + brightness) to rank the images, and outputs the best images in order.
-
-## Requirements
-
-- Python 3.x
-- [OpenCV](https://opencv.org/) (`opencv-python`)
-- [Pillow](https://python-pillow.org/)
-- [ImageHash](https://github.com/JohannesBuchner/imagehash)
-- *(Optional)* [nsfw_detector](https://github.com/infinitered/nsfwjs) for NSFW filtering
-
-### Install Dependencies
-```bash
-git clone https://github.com/rawatrob/Photo-Culling.git
-
-
-```
-```bash
-cd Photo-Culling
-
-```
-Install the necessary packages using pip:
-
-```bash
-pip install opencv-python pillow imagehash
-```
-Basic Command
-```bash
-python image_culling.py <input_folder> <output_folder>
-```
-
-With NSFW Filtering
-
-```bash
-python image_culling.py <input_folder> <output_folder> --nsfw_model path/to/nsfw_model.h5
-
-```
-
-Example
-```bash
-python image_culling.py ./input_images ./output_images --blur_threshold 100 --brightness_threshold 50 --nsfw_threshold 0.7
-```
-
-
----
 ## License
 
-This project is licensed under the MIT License -
+This project is licensed under the MIT License.
