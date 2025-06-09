@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistema de Rotulagem de Imagens</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            color: white;
+            min-height: 100vh;
+            overflow-x: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: clamp(1.2em, 3.5vw, 2.2em);
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            line-height: 1.1;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stats-item {
+            background: rgba(255,255,255,0.08);
+            padding: 2px 8px;
+            border-radius: 8px;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.13);
+            font-size: clamp(0.65em, 1.2vw, 0.8em);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            max-width: 700px;
+            min-width: 220px;
+            height: 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049, #4CAF50);
+            border-radius: 8px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: progressShine 2s infinite;
+        }
+
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 18px;
+            min-height: 0;
+            overflow: visible;
+        }
+
+        .image-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            min-height: 0;
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .image-display {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            object-fit: contain;
+            opacity: 0;
+            transform: scale(0.95);
+            flex-shrink: 1;
+        }
+
+        .image-display.loaded {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .image-display:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+
+        /* Toggle de informações sempre visível no canto superior direito */
+        .image-info-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: rgba(40, 44, 52, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 15;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .image-info-toggle:hover {
+            background: rgba(40, 44, 52, 1);
+            transform: scale(1.1);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .image-info-toggle i {
+            color: white;
+            font-size: 16px;
+        }
+
+        /* Indicador de status no toggle */
+        .image-info-toggle::after {
+            content: "";
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #FFA726;
+            border: 3px solid rgba(40, 44, 52, 0.9);
+            transition: background 0.3s ease;
+        }
+
+        .image-info-toggle.labeled::after {
+            background: #4CAF50;
+        }
+
+        /* Painel de informações */
+        .image-info {
+            position: absolute;
+            top: 15px;
+            right: 70px;
+            background: rgba(40, 44, 52, 0.95);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.8em;
+            z-index: 10;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
+            min-width: 220px;
+            max-width: 300px;
+            transform: translateX(10px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .image-info.visible {
+            transform: translateX(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .image-info-content {
+            padding: 12px;
+        }
+
+        .basic-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .separator {
+            opacity: 0.6;
+            font-size: 0.7em;
+        }
+
+        /* Status dentro do image-info */
+        .label-status {
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .status-icon {
+            font-size: 0.9em;
+        }
+
+        .status-text {
+            font-weight: 500;
+            color: #fff;
+            font-size: 0.75em;
+        }
+
+        .current-label {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 3px 6px;
+            margin-top: 4px;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .label-text {
+            color: #fff;
+            font-weight: 500;
+            font-size: 0.7em;
+        }
+
+        .status-labeled {
+            color: #4CAF50 !important;
+        }
+
+        .status-unlabeled {
+            color: #FFA726 !important;
+        }
+
+        .sidebar {
+            width: 300px;
+            min-width: 280px;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            height: 100%;
+            max-height: none;
+            align-self: stretch;
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .controls-section {
+            margin-bottom: 0px;
+        }
+
+        .controls-section h3 {
+            margin-bottom: 15px;
+            font-size: clamp(1.1em, 2.5vw, 1.4em);
+            color: #FFD700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .key-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .quality-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .rejection-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .key-button {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 6px;
+            border-radius: 8px;
+            font-size: clamp(0.6em, 1.2vw, 0.85em);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-align: center;
+            word-wrap: break-word;
+            line-height: 1.2;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .key-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .key-button:hover::before {
+            left: 100%;
+        }
+
+        .key-button:hover {
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.6);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .key-button:active {
+            transform: translateY(-1px) scale(0.98);
+            transition: all 0.1s ease;
+        }
+
+        .key-button.quality {
+            border-color: #FFD700;
+        }
+
+        .key-button.rejection {
+            border-color: #FF6B6B;
+        }
+
+        .key-button.utility {
+            border-color: #2196F3;
+            background: rgba(33, 150, 243, 0.1);
+        }
+
+        .key-button.utility:hover {
+            background: rgba(33, 150, 243, 0.2);
+            border-color: #1976D2;
+        }
+
+        .navigation {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .nav-button {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: clamp(0.7em, 1.5vw, 0.9em);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            line-height: 1.2;
+            min-height: 40px;
+        }
+
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-button:hover::before {
+            left: 100%;
+        }
+
+        .nav-button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .nav-button:active {
+            transform: translateY(-1px) scale(0.98);
+            transition: all 0.1s ease;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .nav-button:disabled:hover {
+            transform: none;
+            box-shadow: none;
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .nav-button:disabled::before {
+            display: none;
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            opacity: 0.8;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .help-text strong {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .feedback {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .feedback.show {
+            transform: translateX(0);
+        }
+
+        .feedback.success {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .feedback.error {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .labeled-images-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .labeled-image-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .labeled-image-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .labeled-image-item h4 {
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .labeled-image-item p {
+            margin-bottom: 3px;
+            opacity: 0.9;
+        }
+
+        .labeled-image-item small {
+            opacity: 0.7;
+        }
+
+        /* Responsive Design */
+        @media (min-width: 1400px) {
+            .sidebar {
+                width: 300px;
+            }
+            
+            .quality-btn {
+                height: 50px;
+                font-size: 1.2em;
+            }
+            
+            .controls-section {
+                padding: 18px;
+            }
+            
+            .controls-section h3 {
+                font-size: 1.2em;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 260px;
+            }
+            
+            .main-content {
+                gap: 15px;
+            }
+            
+            .quality-btn {
+                min-width: 42px;
+                height: 42px;
+                font-size: 1em;
+            }
+            
+            .reject-btn {
+                height: 42px;
+                font-size: 0.8em;
+            }
+            
+            .nav-button {
+                height: 42px;
+                font-size: 0.85em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: -1;
+                padding: 12px;
+            }
+            
+            .quality-buttons {
+                justify-content: center;
+            }
+            
+            .quality-btn {
+                min-width: 45px;
+                height: 45px;
+                font-size: 1em;
+            }
+            
+            .reject-btn {
+                height: 40px;
+                font-size: 0.8em;
+            }
+            
+            .nav-button {
+                height: 40px;
+                font-size: 0.85em;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .image-container {
+                padding: 15px 20px 30px 20px;
+            }
+            
+            .image-display {
+                max-height: calc(100vh - 120px);
+            }
+            
+            .image-info {
+                top: 20px;
+                right: 20px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10px auto;
+                max-height: 85vh;
+            }
+            
+            .labeled-images-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .image-container {
+                padding: 10px 15px 25px 15px;
+            }
+            
+            .image-display {
+                max-height: calc(100vh - 100px);
+                max-width: calc(100% - 20px);
+            }
+            
+            .image-info {
+                top: 15px;
+                right: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.3em;
+            }
+            
+            .sidebar {
+                padding: 10px;
+            }
+            
+            .controls-section {
+                padding: 8px;
+            }
+            
+            .quality-buttons {
+                gap: 4px;
+            }
+            
+            .quality-btn {
+                min-width: 35px;
+                height: 35px;
+                font-size: 0.9em;
+            }
+            
+            .reject-btn {
+                height: 35px;
+                font-size: 0.7em;
+            }
+            
+            .nav-button {
+                height: 35px;
+                font-size: 0.75em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-images"></i> Sistema de Rotulagem de Imagens</h1>
+            <p>Classifique as imagens por qualidade e identifique problemas</p>
+            
+            <div class="stats" id="stats">
+                <div class="stats-item">
+                    <span>Rotuladas:</span>
+                    <span id="labeled-count">0</span>
+                </div>
+                <div class="stats-item">
+                    <span>Restantes:</span>
+                    <span id="remaining-count">0</span>
+                </div>
+                <div class="stats-item">
+                    <span>Total:</span>
+                    <span id="total-count">0</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="help-text" id="progress-text" style="font-size: 0.9em; margin-top: 4px; font-weight: 600;">0% concluído</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="image-container">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Carregando imagem...</p>
+                </div>
+                <img id="image-display" class="image-display" alt="Imagem para classificação">
+                
+                <!-- Toggle sempre visível -->
+                <div class="image-info-toggle" id="image-info-toggle" title="Mostrar/Ocultar informações da imagem">
+                    <i class="fas fa-info"></i>
+                </div>
+                
+                <!-- Painel de informações -->
+                <div class="image-info" id="image-info">
+                    <div class="image-info-content" id="image-info-content">
+                        <div class="basic-info">
+                            <span id="image-filename">Carregando...</span>
+                            <span class="separator">•</span>
+                            <span id="image-index">0/0</span>
+                        </div>
+                        <div class="label-status" id="label-status">
+                            <span class="status-indicator" id="status-indicator">
+                                <span class="status-icon" id="status-icon">⚪</span>
+                                <span class="status-text" id="status-text">Não rotulada</span>
+                            </span>
+                            <div class="current-label" id="current-label-display" style="display: none;">
+                                <span class="label-text" id="current-label-text"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="controls-section">
+                    <h3><i class="fas fa-star"></i> Qualidade</h3>
+                    <div class="key-grid quality-grid">
+                        <button class="key-button quality" data-key="1" onclick="saveLabel('1')" title="1 Estrela">⭐</button>
+                        <button class="key-button quality" data-key="2" onclick="saveLabel('2')" title="2 Estrelas">⭐⭐</button>
+                        <button class="key-button quality" data-key="3" onclick="saveLabel('3')" title="3 Estrelas">⭐⭐⭐</button>
+                        <button class="key-button quality" data-key="4" onclick="saveLabel('4')" title="4 Estrelas">⭐⭐⭐⭐</button>
+                        <button class="key-button quality" data-key="5" onclick="saveLabel('5')" title="5 Estrelas">⭐⭐⭐⭐⭐</button>
+                    </div>
+                    <div class="help-text">Pressione <strong>1-5</strong> no teclado</div>
+                </div>
+
+                <div class="controls-section">
+                    <h3><i class="fas fa-times-circle"></i> Problemas</h3>
+                    <div class="key-grid rejection-grid">
+                        <button class="key-button rejection" data-key="D" onclick="saveLabel('d')" title="Muito Escura">
+                            🌑 Muito Escura
+                        </button>
+                        <button class="key-button rejection" data-key="L" onclick="saveLabel('l')" title="Muito Clara">
+                            ☀️ Muito Clara
+                        </button>
+                        <button class="key-button rejection" data-key="B" onclick="saveLabel('b')" title="Muito Borrada">
+                            😵‍💫 Muito Borrada
+                        </button>
+                        <button class="key-button rejection" data-key="C" onclick="saveLabel('c')" title="Cortada/Incompleta">
+                            ✂️ Cortada/Incompleta
+                        </button>
+                        <button class="key-button rejection" data-key="X" onclick="saveLabel('x')" title="Outros Problemas">
+                            ❌ Outros Problemas
+                        </button>
+                    </div>
+                    <div class="help-text">Pressione <strong>D, L, B, C, X</strong> no teclado</div>
+                </div>
+
+                <div class="controls-section">
+                    <h3><i class="fas fa-arrows-alt"></i> Navegação</h3>
+                    <div class="key-grid nav-grid">
+                        <button class="key-button nav" data-key="←" id="prev-btn" onclick="navigate(-1)" disabled>
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </button>
+                        <button class="key-button nav" data-key="→" id="next-btn" onclick="navigate(1)">
+                            Próxima <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="help-text">Use as setas <strong>← →</strong> do teclado</div>
+                </div>
+
+                <div class="controls-section">
+                    <h3><i class="fas fa-history"></i> Revisão</h3>
+                    <div class="key-grid review-grid">
+                        <button class="key-button review" id="review-btn" onclick="showReviewModal()">
+                            <i class="fas fa-search"></i> Revisar Rótulos
+                        </button>
+                        <button class="key-button review" id="first-unlabeled-btn" onclick="goToFirstUnlabeled()">
+                            <i class="fas fa-forward"></i> Primeira Não Rotulada
+                        </button>
+                    </div>
+                    <div class="help-text">Facilita revisão e navegação</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Revisão -->
+    <div id="review-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeReviewModal()">&times;</span>
+            <h2><i class="fas fa-search"></i> Revisão de Rótulos</h2>
+            <div id="labeled-images-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Carregando imagens rotuladas...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback" class="feedback"></div>
+
+    <script>
+        let currentIndex = 0;
+        let totalImages = 0;
+        let keyBindings = {};
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadKeyBindings();
+            loadFirstUnlabeled();
+            updateStats();
+            
+            // Configurar toggle das informações da imagem
+            setupImageInfoToggle();
+        });
+
+        // Configurar funcionalidade de toggle das informações
+        function setupImageInfoToggle() {
+            const imageInfo = document.getElementById('image-info');
+            const toggle = document.getElementById('image-info-toggle');
+            let isVisible = false;
+            
+            // Função para mostrar/ocultar informações
+            function toggleImageInfo() {
+                isVisible = !isVisible;
+                
+                if (isVisible) {
+                    imageInfo.classList.add('visible');
+                    console.log('Informações da imagem mostradas');
+                } else {
+                    imageInfo.classList.remove('visible');
+                    console.log('Informações da imagem ocultadas');
+                }
+            }
+            
+            // Click no toggle
+            if (toggle) {
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleImageInfo();
+                });
+            }
+            
+            // Tecla I para toggle
+            window.toggleImageInfoVisibility = toggleImageInfo;
+        }
+
+        // Carregar configurações de teclas
+        async function loadKeyBindings() {
+            try {
+                const response = await fetch('/api/keys');
+                const data = await response.json();
+                
+                // Converter estrutura para formato esperado
+                keyBindings = {};
+                
+                // Adicionar teclas de qualidade
+                Object.keys(data.quality).forEach(key => {
+                    keyBindings[key] = data.quality[key];
+                });
+                
+                // Adicionar teclas de rejeição (manter em minúsculo e maiúsculo)
+                Object.keys(data.rejection).forEach(key => {
+                    keyBindings[key.toUpperCase()] = data.rejection[key];
+                    keyBindings[key.toLowerCase()] = data.rejection[key];
+                });
+                
+                // Adicionar navegação
+                Object.keys(data.navigation).forEach(key => {
+                    keyBindings[key] = data.navigation[key];
+                });
+                
+                console.log('KeyBindings carregados:', keyBindings);
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+            }
+        }
+
+        // Carregar primeira imagem não rotulada
+        async function loadFirstUnlabeled() {
+            try {
+                const response = await fetch('/api/first-unlabeled');
+                const data = await response.json();
+                currentIndex = data.index;
+                loadImage(currentIndex);
+            } catch (error) {
+                console.error('Erro ao carregar primeira imagem não rotulada:', error);
+                loadImage(0);
+            }
+        }
+
+        // Atualizar status da imagem atual
+        function updateCurrentStatus(currentLabel) {
+            console.log('updateCurrentStatus chamado com:', currentLabel);
+            
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+            const currentLabelDisplay = document.getElementById('current-label-display');
+            const currentLabelText = document.getElementById('current-label-text');
+            const imageInfoToggle = document.getElementById('image-info-toggle');
+            
+            if (currentLabel) {
+                // Imagem rotulada
+                console.log('Imagem rotulada com:', currentLabel);
+                statusIcon.textContent = '✅';
+                statusText.textContent = 'Rotulada';
+                statusText.className = 'status-text status-labeled';
+                
+                currentLabelDisplay.style.display = 'block';
+                currentLabelText.textContent = currentLabel;
+                
+                // Adicionar classe para indicador visual no toggle
+                imageInfoToggle.classList.add('labeled');
+            } else {
+                // Imagem não rotulada
+                console.log('Imagem não rotulada');
+                statusIcon.textContent = '⚪';
+                statusText.textContent = 'Não rotulada';
+                statusText.className = 'status-text status-unlabeled';
+                
+                currentLabelDisplay.style.display = 'none';
+                
+                // Remover classe para indicador visual no toggle
+                imageInfoToggle.classList.remove('labeled');
+            }
+        }
+
+        // Carregar imagem
+        async function loadImage(index) {
+            const loading = document.getElementById('loading');
+            const imageDisplay = document.getElementById('image-display');
+            
+            loading.style.display = 'flex';
+            imageDisplay.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/image/${index}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentIndex = index;
+                totalImages = data.total || data.total_images;
+                
+                // Atualizar informações da imagem
+                document.getElementById('image-filename').textContent = data.filename;
+                document.getElementById('image-index').textContent = `${index + 1}/${totalImages}`;
+                
+                // Carregar imagem
+                const img = new Image();
+                img.onload = function() {
+                    imageDisplay.src = this.src;
+                    imageDisplay.classList.add('loaded');
+                    loading.style.display = 'none';
+                    imageDisplay.style.display = 'block';
+                    
+                    // Atualizar botões de navegação
+                    updateNavigationButtons();
+                    
+                    // Extrair rótulo atual da resposta da API
+                    const currentLabel = data.status && data.status.labeled ? data.status.label : null;
+                    console.log('Dados da API:', data);
+                    console.log('Label extraído:', currentLabel);
+                    
+                    // Atualizar status da imagem atual
+                    updateCurrentStatus(currentLabel);
+                    
+                    // Destacar rótulo atual se existir
+                    highlightCurrentLabel(currentLabel);
+                };
+                img.src = `/api/image/file/${data.filename}`;
+                
+            } catch (error) {
+                console.error('Erro ao carregar imagem:', error);
+                showFeedback('Erro ao carregar imagem', 'error');
+                loading.style.display = 'none';
+            }
+        }
+
+        // Destacar rótulo atual
+        function highlightCurrentLabel(label) {
+            // Limpar highlights anteriores
+            document.querySelectorAll('.key-button.active').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (!label) return;
+            
+            // Encontrar e destacar o botão correspondente
+            const buttons = document.querySelectorAll('.key-button');
+            buttons.forEach(btn => {
+                const onclick = btn.getAttribute('onclick');
+                if (onclick && onclick.includes('saveLabel')) {
+                    const match = onclick.match(/'([^']+)'/);
+                    if (match) {
+                        const key = match[1];
+                        if (keyBindings[key] && keyBindings[key].label === label) {
+                            btn.classList.add('active');
+                        }
+                    }
+                }
+            });
+        }
+
+        // Salvar rótulo
+        async function saveLabel(key) {
+            if (!keyBindings[key]) {
+                showFeedback('Chave inválida', 'error');
+                return;
+            }
+
+            const filename = document.getElementById('image-filename').textContent;
+            
+            try {
+                const response = await fetch('/api/label', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: filename,
+                        key: key
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showFeedback(`Salvo: ${data.label}`, 'success');
+                    
+                    // Atualizar status da imagem atual
+                    updateCurrentStatus(data.label);
+                    
+                    // Destacar botão
+                    highlightCurrentLabel(data.label);
+                    
+                    // Atualizar estatísticas
+                    updateStats();
+                    
+                    // Ir para próxima imagem automaticamente
+                    setTimeout(() => {
+                        navigate(1);
+                    }, 800);
+                } else {
+                    showFeedback(data.error || 'Erro ao salvar', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar rótulo:', error);
+                showFeedback('Erro ao salvar rótulo', 'error');
+            }
+        }
+
+        // Navegação
+        function navigate(direction) {
+            const newIndex = currentIndex + direction;
+            if (newIndex >= 0 && newIndex < totalImages) {
+                loadImage(newIndex);
+            }
+        }
+
+        // Atualizar botões de navegação
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === totalImages - 1;
+        }
+
+        // Ir para primeira não rotulada
+        async function goToFirstUnlabeled() {
+            try {
+                const response = await fetch('/api/first-unlabeled');
+                const data = await response.json();
+                loadImage(data.index);
+                showFeedback('Indo para primeira imagem não rotulada', 'success');
+            } catch (error) {
+                console.error('Erro ao ir para primeira não rotulada:', error);
+                showFeedback('Erro ao navegar', 'error');
+            }
+        }
+
+        // Atualizar estatísticas
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                document.getElementById('labeled-count').textContent = data.total_labeled;
+                document.getElementById('remaining-count').textContent = data.remaining;
+                document.getElementById('total-count').textContent = data.total_images;
+                document.getElementById('progress-fill').style.width = data.progress_percent + '%';
+                document.getElementById('progress-text').textContent = data.progress_percent.toFixed(1) + '% concluído';
+                
+            } catch (error) {
+                console.error('Erro ao atualizar estatísticas:', error);
+            }
+        }
+
+        // Modal de revisão
+        async function showReviewModal() {
+            const modal = document.getElementById('review-modal');
+            const container = document.getElementById('labeled-images-container');
+            
+            modal.style.display = 'block';
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando imagens rotuladas...</p></div>';
+            
+            try {
+                const response = await fetch('/api/labeled-images');
+                const data = await response.json();
+                
+                if (data.labeled_images.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; padding: 20px;">Nenhuma imagem rotulada ainda.</p>';
+                    return;
+                }
+                
+                const html = `
+                    <div class="labeled-images-list">
+                        ${data.labeled_images.map(img => `
+                            <div class="labeled-image-item" onclick="goToImage(${img.index})">
+                                <h4>${img.filename}</h4>
+                                <p><strong>Rótulo:</strong> ${img.label}</p>
+                                <p><strong>Posição:</strong> ${img.index + 1}/${totalImages}</p>
+                                <small>Rotulada em: ${new Date(img.timestamp).toLocaleString('pt-BR')}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Erro ao carregar imagens rotuladas:', error);
+                container.innerHTML = '<p style="text-align: center; padding: 20px; color: #ff6b6b;">Erro ao carregar imagens rotuladas.</p>';
+            }
+        }
+
+        // Fechar modal de revisão
+        function closeReviewModal() {
+            document.getElementById('review-modal').style.display = 'none';
+        }
+
+        // Ir para imagem específica
+        function goToImage(index) {
+            closeReviewModal();
+            loadImage(index);
+            showFeedback('Navegando para imagem selecionada', 'success');
+        }
+
+        // Mostrar feedback
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.className = `feedback ${type}`;
+            feedback.classList.add('show');
+            
+            setTimeout(() => {
+                feedback.classList.remove('show');
+            }, 3000);
+        }
+
+        // Eventos de teclado
+        document.addEventListener('keydown', function(e) {
+            // Prevenir ação padrão para teclas específicas
+            if (['1', '2', '3', '4', '5', 'D', 'L', 'B', 'C', 'X', 'I', 'ArrowLeft', 'ArrowRight'].includes(e.key.toUpperCase())) {
+                e.preventDefault();
+            }
+            
+            switch(e.key.toUpperCase()) {
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case 'D':
+                case 'L':
+                case 'B':
+                case 'C':
+                case 'X':
+                    saveLabel(e.key.toLowerCase());
+                    break;
+                case 'I':
+                    toggleImageInfoVisibility();
+                    break;
+                case 'ARROWLEFT':
+                    navigate(-1);
+                    break;
+                case 'ARROWRIGHT':
+                    navigate(1);
+                    break;
+                case 'ESCAPE':
+                    closeReviewModal();
+                    break;
+            }
+        });
+
+        // Fechar modal clicando fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('review-modal');
+            if (event.target === modal) {
+                closeReviewModal();
+            }
+        }
+
+        // Prevenir zoom em dispositivos móveis
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
