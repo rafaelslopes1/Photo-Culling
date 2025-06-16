@@ -1,0 +1,734 @@
+#!/usr/bin/env python3
+"""
+Consolidated Web Labeling Interface for Photo Culling System
+Interface web consolidada para rotulagem de imagens
+Sistema de classificação rápida com suporte a IA
+"""
+
+from flask import Flask, render_template, jsonify, request, send_file
+import os
+import json
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class WebLabelingApp:
+    """
+    Aplicação web consolidada para rotulagem de imagens
+    Combina interface manual com predições de IA
+    """
+    
+    def __init__(self, images_dir="../../data/input", 
+                 labels_db="../../data/labels/labels.db",
+                 features_db="../../data/features/features.db",
+                 use_ai=True,
+                 selection_mode='sequential'):
+        """
+        Inicializa a aplicação web
+        
+        Args:
+            images_dir: Diretório das imagens
+            labels_db: Banco de dados de labels
+            features_db: Banco de dados de features
+            use_ai: Usar classificador de IA
+            selection_mode: Modo de seleção ('sequential' ou 'smart')
+        """
+        
+        # Configurar caminhos absolutos baseados na localização do arquivo
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(current_dir))
+        
+        template_folder = os.path.join(current_dir, 'templates')
+        static_folder = os.path.join(current_dir, 'templates')
+        
+        self.app = Flask(__name__, 
+                        static_folder=static_folder,
+                        template_folder=template_folder)
+        
+        # Converter caminhos relativos para absolutos
+        if not os.path.isabs(images_dir):
+            self.images_dir = os.path.join(project_root, images_dir)
+        else:
+            self.images_dir = images_dir
+            
+        if not os.path.isabs(labels_db):
+            self.labels_db = os.path.join(project_root, labels_db)
+        else:
+            self.labels_db = labels_db
+            
+        if not os.path.isabs(features_db):
+            self.features_db = os.path.join(project_root, features_db)
+        else:
+            self.features_db = features_db
+        self.use_ai = use_ai
+        self.selection_mode = selection_mode
+        self.ai_classifier = None
+        
+        # Initialize database
+        self.init_database()
+        
+        # Load image list
+        self.image_list = self.load_image_list()
+        self.current_session = datetime.now().isoformat()
+        
+        # Setup AI if enabled
+        if self.use_ai:
+            self._setup_ai_classifier()
+        
+        # Setup routes
+        self._setup_routes()
+        
+        logger.info("🌐 Web Labeling App initialized")
+    
+    def init_database(self):
+        """Inicializa banco de dados SQLite"""
+        os.makedirs(os.path.dirname(self.labels_db), exist_ok=True)
+        
+        conn = sqlite3.connect(self.labels_db)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS labels (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT UNIQUE NOT NULL,
+                label_type TEXT NOT NULL,
+                score INTEGER,
+                rejection_reason TEXT,
+                timestamp TEXT NOT NULL,
+                session_id TEXT NOT NULL,
+                ai_prediction TEXT,
+                ai_confidence REAL
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                start_time TEXT NOT NULL,
+                total_labeled INTEGER DEFAULT 0,
+                last_activity TEXT,
+                ai_enabled BOOLEAN DEFAULT 0
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info("✓ Database initialized")
+    
+    def load_image_list(self):
+        """Carrega lista de imagens em ordem determinística"""
+        if not os.path.exists(self.images_dir):
+            logger.error(f"Pasta {self.images_dir} não encontrada")
+            return []
+        
+        images = []
+        extensions = ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.tiff', '*.webp']
+        
+        for ext in extensions:
+            images.extend(Path(self.images_dir).glob(ext))
+            images.extend(Path(self.images_dir).glob(ext.upper()))
+        
+        # Ordem determinística para evitar repetições
+        image_names = sorted([img.name for img in images])
+        
+        logger.info(f"✓ {len(image_names)} images loaded (deterministic order)")
+        return image_names
+    
+    def _setup_ai_classifier(self):
+        """Configura classificador de IA"""
+        try:
+            from ..core.ai_classifier import AIClassifier
+            self.ai_classifier = AIClassifier(self.labels_db, self.features_db)
+            
+            if self.ai_classifier.load_best_model():
+                logger.info("✓ AI classifier loaded")
+            else:
+                logger.warning("⚠️ No trained AI model found")
+                self.use_ai = False
+                
+        except Exception as e:
+            logger.warning(f"⚠️ AI classifier not available: {e}")
+            self.use_ai = False
+            self.ai_classifier = None
+    
+    def _setup_routes(self):
+        """Configura rotas do Flask"""
+        
+        @self.app.route('/')
+        def index():
+            """Página principal"""
+            stats = self.get_labeling_stats()
+            return render_template('index.html', 
+                                 ai_enabled=self.use_ai,
+                                 **stats)
+        
+        @self.app.route('/api/next_image')
+        def next_image():
+            """Obtém próxima imagem para rotular"""
+            unlabeled = self.get_unlabeled_images()
+            
+            if not unlabeled:
+                return jsonify({
+                    'success': False,
+                    'message': 'Todas as imagens foram rotuladas!',
+                    'finished': True
+                })
+            
+            filename = unlabeled[0]
+            image_info = self.get_image_info(filename)
+            
+            # Get AI prediction if available
+            ai_prediction = None
+            if self.use_ai and self.ai_classifier:
+                ai_prediction = self._get_ai_prediction(filename)
+            
+            return jsonify({
+                'success': True,
+                'filename': filename,
+                'image_url': f'/api/image/{filename}',
+                'info': image_info,
+                'ai_prediction': ai_prediction,
+                'progress': {
+                    'labeled': len(self.image_list) - len(unlabeled),
+                    'total': len(self.image_list),
+                    'remaining': len(unlabeled)
+                }
+            })
+        
+        @self.app.route('/api/image/<filename>')
+        def serve_image(filename):
+            """Serve imagem"""
+            image_path = os.path.join(self.images_dir, filename)
+            if os.path.exists(image_path):
+                return send_file(image_path)
+            else:
+                return jsonify({'error': 'Image not found'}), 404
+        
+        @self.app.route('/api/label', methods=['POST'])
+        def save_label():
+            """Salva rótulo"""
+            data = request.get_json()
+            
+            if not data or 'filename' not in data:
+                return jsonify({'success': False, 'error': 'Invalid data'})
+            
+            result = self.save_image_label(
+                filename=data['filename'],
+                label_type=data.get('label_type'),
+                score=data.get('score'),
+                rejection_reason=data.get('rejection_reason'),
+                ai_prediction=data.get('ai_prediction'),
+                ai_confidence=data.get('ai_confidence')
+            )
+            
+            return jsonify(result)
+        
+        @self.app.route('/api/stats')
+        def stats():
+            """Estatísticas de rotulagem"""
+            return jsonify(self.get_labeling_stats())
+        
+        @self.app.route('/api/keys')
+        def keyboard_shortcuts():
+            """Retorna atalhos de teclado"""
+            return jsonify({
+                'shortcuts': {
+                    'Space': 'Próxima imagem',
+                    'Backspace': 'Imagem anterior', 
+                    '1-5': 'Classificação rápida (1=Ruim, 5=Excelente)',
+                    'r': 'Rejeitar imagem',
+                    'd': 'Marcar como duplicata',
+                    'b': 'Marcar como desfocada',
+                    'i': 'Mostrar/ocultar informações'
+                }
+            })
+        
+        @self.app.route('/api/first-unlabeled')
+        def first_unlabeled():
+            """Primeira imagem não rotulada"""
+            unlabeled = self.get_unlabeled_images()
+            if unlabeled:
+                return jsonify({
+                    'success': True,
+                    'index': 0,
+                    'filename': unlabeled[0]
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Todas as imagens foram rotuladas!'
+                })
+        
+        @self.app.route('/api/image/<int:index>')
+        def get_image_data(index):
+            """Obtém metadados da imagem por índice"""
+            if 0 <= index < len(self.image_list):
+                filename = self.image_list[index]
+                
+                # Verificar se imagem existe
+                image_path = os.path.join(self.images_dir, filename)
+                if not os.path.exists(image_path):
+                    return jsonify({'error': 'Image not found'}), 404
+                
+                # Obter status de rotulagem
+                label_status = self.get_image_label_status(filename)
+                
+                return jsonify({
+                    'filename': filename,
+                    'index': index,
+                    'total': len(self.image_list),
+                    'total_images': len(self.image_list),
+                    'status': label_status
+                })
+            return jsonify({'error': 'Image not found'}), 404
+        
+        @self.app.route('/api/image/file/<filename>')
+        def get_image_file(filename):
+            """Serve arquivo de imagem"""
+            image_path = os.path.join(self.images_dir, filename)
+            if os.path.exists(image_path):
+                return send_file(image_path)
+            return jsonify({'error': 'Image file not found'}), 404
+
+        @self.app.route('/api/ai_retrain', methods=['POST'])
+        def retrain_ai():
+            """Re-treina modelo de IA"""
+            if not self.use_ai or not self.ai_classifier:
+                return jsonify({'success': False, 'error': 'AI not available'})
+            
+            try:
+                results = self.ai_classifier.train_models()
+                return jsonify({
+                    'success': True,
+                    'message': 'Modelo re-treinado com sucesso',
+                    'results': {name: {'accuracy': res['cv_mean']} for name, res in results.items()}
+                })
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+    
+    def get_unlabeled_images(self):
+        """Retorna lista de imagens não rotuladas"""
+        conn = sqlite3.connect(self.labels_db)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT filename FROM labels')
+        labeled_files = {row[0] for row in cursor.fetchall()}
+        
+        conn.close()
+        
+        unlabeled = [img for img in self.image_list if img not in labeled_files]
+        return unlabeled
+    
+    def get_image_info(self, filename):
+        """Obtém informações da imagem"""
+        image_path = os.path.join(self.images_dir, filename)
+        
+        if not os.path.exists(image_path):
+            return None
+        
+        # Basic file info
+        stat = os.stat(image_path)
+        
+        # Try to get features if available
+        features = self._get_image_features(filename)
+        
+        return {
+            'filename': filename,
+            'size': stat.st_size,
+            'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            'features': features
+        }
+    
+    def _get_image_features(self, filename):
+        """Obtém features da imagem se disponível"""
+        try:
+            conn = sqlite3.connect(self.features_db)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT sharpness_laplacian, brightness_mean, saturation_mean, 
+                       face_count, visual_complexity
+                FROM image_features 
+                WHERE filename = ?
+            ''', (filename,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                return {
+                    'sharpness': round(result[0], 2) if result[0] else None,
+                    'brightness': round(result[1], 2) if result[1] else None,
+                    'saturation': round(result[2], 2) if result[2] else None,
+                    'faces': result[3] if result[3] else 0,
+                    'complexity': round(result[4], 3) if result[4] else None
+                }
+        except:
+            pass
+        
+        return None
+    
+    def _get_ai_prediction(self, filename):
+        """Obtém predição da IA para a imagem"""
+        if not self.ai_classifier:
+            return None
+        
+        try:
+            image_path = os.path.join(self.images_dir, filename)
+            prediction_result = self.ai_classifier.get_prediction_for_image(image_path)
+            
+            if prediction_result:
+                return {
+                    'prediction': prediction_result['formatted_prediction'],
+                    'confidence': round(prediction_result['confidence'], 3),
+                    'raw_prediction': prediction_result['prediction']
+                }
+        except Exception as e:
+            logger.error(f"Error getting AI prediction: {e}")
+        
+        return None
+    
+    def save_image_label(self, filename, label_type, score=None, rejection_reason=None,
+                        ai_prediction=None, ai_confidence=None):
+        """Salva rótulo da imagem"""
+        try:
+            conn = sqlite3.connect(self.labels_db)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT OR REPLACE INTO labels 
+                (filename, label_type, score, rejection_reason, timestamp, session_id,
+                 ai_prediction, ai_confidence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                filename, label_type, score, rejection_reason,
+                datetime.now().isoformat(), self.current_session,
+                ai_prediction, ai_confidence
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"✓ Label saved for {filename}: {label_type}")
+            
+            return {'success': True, 'message': 'Label saved successfully'}
+            
+        except Exception as e:
+            logger.error(f"Error saving label: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def get_labeling_stats(self):
+        """Obtém estatísticas de rotulagem"""
+        try:
+            conn = sqlite3.connect(self.labels_db)
+            cursor = conn.cursor()
+            
+            # Total counts
+            cursor.execute('SELECT COUNT(*) FROM labels')
+            total_labeled = cursor.fetchone()[0]
+            
+            # Quality distribution
+            cursor.execute('''
+                SELECT score, COUNT(*) 
+                FROM labels 
+                WHERE label_type = 'quality' 
+                GROUP BY score
+            ''')
+            quality_dist = dict(cursor.fetchall())
+            
+            # Rejection distribution
+            cursor.execute('''
+                SELECT rejection_reason, COUNT(*) 
+                FROM labels 
+                WHERE label_type = 'rejection' 
+                GROUP BY rejection_reason
+            ''')
+            rejection_dist = dict(cursor.fetchall())
+            
+            conn.close()
+            
+            return {
+                'total_labeled': total_labeled,
+                'total_images': len(self.image_list),
+                'remaining': len(self.image_list) - total_labeled,
+                'progress_percent': round((total_labeled / len(self.image_list)) * 100, 1) if self.image_list else 0,
+                'quality_distribution': quality_dist,
+                'rejection_distribution': rejection_dist
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting stats: {e}")
+            return {
+                'total_labeled': 0,
+                'total_images': len(self.image_list),
+                'remaining': len(self.image_list),
+                'progress_percent': 0,
+                'quality_distribution': {},
+                'rejection_distribution': {}
+            }
+    
+    def get_image_label_status(self, filename):
+        """Obtém status de rotulagem de uma imagem específica"""
+        try:
+            conn = sqlite3.connect(self.labels_db)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT label_type, score, rejection_reason, timestamp
+                FROM labels 
+                WHERE filename = ?
+                ORDER BY timestamp DESC
+                LIMIT 1
+            ''', (filename,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                label_type, score, rejection_reason, timestamp = result
+                return {
+                    'labeled': True,
+                    'label_type': label_type,
+                    'score': score,
+                    'rejection_reason': rejection_reason,
+                    'timestamp': timestamp
+                }
+            else:
+                return {
+                    'labeled': False,
+                    'label_type': None,
+                    'score': None,
+                    'rejection_reason': None,
+                    'timestamp': None
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting label status for {filename}: {e}")
+            return {
+                'labeled': False,
+                'label_type': None,
+                'score': None,
+                'rejection_reason': None,
+                'timestamp': None
+            }
+    
+    def get_class_distribution(self):
+        """Analisa distribuição de classes para identificar sub-representadas"""
+        try:
+            conn = sqlite3.connect(self.labels_db)
+            cursor = conn.cursor()
+            
+            # Get class distribution
+            cursor.execute('''
+                SELECT 
+                    CASE 
+                        WHEN label_type = 'quality' THEN 'quality_' || CAST(score AS TEXT)
+                        WHEN label_type = 'rejection' THEN 'reject_' || rejection_reason
+                    END as class_label,
+                    COUNT(*) as count
+                FROM labels
+                GROUP BY class_label
+                ORDER BY count ASC
+            ''')
+            
+            results = cursor.fetchall()
+            conn.close()
+            
+            if not results:
+                return {}
+            
+            # Convert to dictionary
+            class_counts = {label: count for label, count in results}
+            
+            # Find underrepresented classes (bottom 30% or less than median)
+            counts = list(class_counts.values())
+            
+            # Import numpy dynamically for smart selection
+            import numpy as np
+            median_count = np.median(counts) if counts else 1
+            min_threshold = max(1, median_count * 0.5)  # Classes with less than 50% of median
+            
+            underrepresented = {
+                cls: count for cls, count in class_counts.items() 
+                if count < min_threshold
+            }
+            
+            return {
+                'all_classes': class_counts,
+                'underrepresented': underrepresented,
+                'min_threshold': min_threshold,
+                'total_labeled': sum(counts)
+            }
+            
+        except Exception as e:
+            logger.error(f"Erro ao analisar distribuição de classes: {e}")
+            return {}
+    
+    def predict_image_probabilities(self, unlabeled_filenames):
+        """Usa modelo treinado para predizer probabilidades das imagens não rotuladas"""
+        if not self.use_ai or not self.ai_classifier:
+            return {}
+        
+        try:
+            # Get features for unlabeled images
+            conn = sqlite3.connect(self.features_db)
+            cursor = conn.cursor()
+            
+            # Check if we have features for these images
+            placeholders = ','.join(['?'] * len(unlabeled_filenames))
+            query = f"SELECT filename FROM image_features WHERE filename IN ({placeholders})"
+            cursor.execute(query, unlabeled_filenames)
+            available_filenames = [row[0] for row in cursor.fetchall()]
+            conn.close()
+            
+            if not available_filenames:
+                return {}
+            
+            # Get full image paths
+            image_paths = [os.path.join(self.images_dir, fname) for fname in available_filenames]
+            
+            # Make predictions using AI classifier
+            predictions_with_probs = self.ai_classifier.predict_batch(image_paths, return_probabilities=True)
+            
+            predictions = {}
+            for i, (pred, probs) in enumerate(predictions_with_probs):
+                filename = available_filenames[i]
+                
+                # Create probability dictionary with generic class names
+                class_names = [f'class_{j}' for j in range(len(probs))]
+                prob_dict = dict(zip(class_names, probs))
+                max_prob = max(probs)
+                uncertainty = 1 - max_prob
+                
+                predictions[filename] = {
+                    'predicted_class': pred,
+                    'probabilities': prob_dict,
+                    'max_probability': max_prob,
+                    'uncertainty': uncertainty
+                }
+            
+            return predictions
+            
+        except Exception as e:
+            logger.error(f"Erro ao predizer probabilidades: {e}")
+            return {}
+    
+    def get_smart_next_image_index(self):
+        """Seleciona próxima imagem priorizando classes sub-representadas"""
+        import random
+        
+        # Get unlabeled images
+        unlabeled = self.get_unlabeled_images()
+        
+        if not unlabeled:
+            return len(self.image_list) - 1  # All labeled, return last
+        
+        # Convert to indices
+        unlabeled_indices = []
+        for filename in unlabeled:
+            try:
+                index = self.image_list.index(filename)
+                unlabeled_indices.append(index)
+            except ValueError:
+                continue
+        
+        if not unlabeled_indices:
+            return 0
+        
+        # If no AI available or insufficient labels, use random selection
+        class_dist = self.get_class_distribution()
+        if not self.use_ai or not class_dist or class_dist.get('total_labeled', 0) < 10:
+            random_index = random.choice(unlabeled_indices)
+            random_filename = self.image_list[random_index]
+            logger.info(f"🎲 SELEÇÃO ALEATÓRIA: {random_filename}")
+            if not self.use_ai:
+                logger.info("   💭 Motivo: IA não disponível")
+            else:
+                labeled_count = class_dist.get('total_labeled', 0)
+                logger.info(f"   💭 Motivo: Poucos dados ({labeled_count} < 10 mínimo)")
+            return random_index
+        
+        # Get predictions for unlabeled images
+        predictions = self.predict_image_probabilities(unlabeled)
+        if not predictions:
+            random_index = random.choice(unlabeled_indices)
+            random_filename = self.image_list[random_index]
+            logger.info(f"🎲 SELEÇÃO ALEATÓRIA: {random_filename}")
+            logger.info("   💭 Motivo: Erro ao obter predições do modelo")
+            return random_index
+        
+        # Score images based on:
+        # 1. Probability of being in underrepresented class (higher = better)
+        # 2. Uncertainty (higher = more informative)
+        # 3. Random factor for diversity
+        
+        underrepresented_classes = set(class_dist.get('underrepresented', {}).keys())
+        scored_indices = []
+        
+        for index in unlabeled_indices:
+            filename = self.image_list[index]
+            if filename not in predictions:
+                continue
+            
+            pred_data = predictions[filename]
+            probabilities = pred_data.get('probabilities', {})
+            uncertainty = pred_data.get('uncertainty', 0.5)
+            
+            # Score based on probability of underrepresented classes
+            underrep_score = sum(
+                probabilities.get(cls, 0) for cls in underrepresented_classes
+            )
+            
+            # Combine scores with weights
+            final_score = (
+                underrep_score * 0.6 +      # 60% weight for underrepresented classes
+                uncertainty * 0.3 +         # 30% weight for uncertainty
+                random.random() * 0.1       # 10% random factor
+            )
+            
+            scored_indices.append((index, final_score, filename))
+        
+        if not scored_indices:
+            random_index = random.choice(unlabeled_indices)
+            random_filename = self.image_list[random_index]
+            logger.info(f"🎲 SELEÇÃO ALEATÓRIA: {random_filename}")
+            logger.info("   💭 Motivo: Nenhuma imagem com features disponíveis para análise")
+            return random_index
+        
+        # Sort by score (highest first) and return top choice
+        scored_indices.sort(key=lambda x: x[1], reverse=True)
+        selected_index, score, selected_filename = scored_indices[0]
+        
+        # Detailed logging for transparency
+        if selected_filename in predictions:
+            pred_data = predictions[selected_filename]
+            probabilities = pred_data.get('probabilities', {})
+            predicted_class = pred_data.get('predicted_class', 'unknown')
+            uncertainty = pred_data.get('uncertainty', 0)
+            
+            # Calculate individual components
+            underrep_score = sum(probabilities.get(cls, 0) for cls in underrepresented_classes)
+            
+            logger.info(f"\n🎯 SELEÇÃO INTELIGENTE: {selected_filename}")
+            logger.info(f"   📊 Score final: {score:.3f}")
+            logger.info(f"   🤖 Classe predita: {predicted_class} ({probabilities.get(predicted_class, 0):.1%})")
+            logger.info(f"   ⚖️  Classes sub-representadas: {list(underrepresented_classes)}")
+            logger.info(f"   📈 Score classes minoritárias: {underrep_score:.3f} (60% peso)")
+            logger.info(f"   ❓ Incerteza do modelo: {uncertainty:.3f} (30% peso)")
+            logger.info(f"   🎲 Fator aleatório: 10% peso")
+            
+            # Show top probabilities
+            if probabilities:
+                top_probs = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)[:3]
+                logger.info(f"   🏆 Top 3 probabilidades: {top_probs}")
+        else:
+            logger.info(f"🎯 Smart selection: {selected_filename} (score: {score:.3f}) [fallback: sem features]")
+        
+        return selected_index
+```
