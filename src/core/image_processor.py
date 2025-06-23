@@ -15,6 +15,15 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Optional, Tuple
 import numpy as np
+import sys
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import optimized blur detection
+from .image_quality_analyzer import ImageQualityAnalyzer
+from data.quality.blur_config import get_threshold_by_strategy, DEFAULT_PRACTICAL_THRESHOLD
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +47,17 @@ class ImageProcessor:
             'low_light': 0,
             'failures': 0
         }
+        
+        # Initialize optimized quality analyzer
+        self.quality_analyzer = ImageQualityAnalyzer()
+        
+        # Use optimized blur detection if configured
+        self.use_optimized_blur = self.config.get('processing_settings', {}).get('blur_detection_optimized', {}).get('enabled', False)
+        if self.use_optimized_blur:
+            blur_strategy = self.config.get('processing_settings', {}).get('blur_detection_optimized', {}).get('strategy', 'balanced')
+            self.blur_threshold = self._get_blur_threshold_by_strategy(blur_strategy)
+        else:
+            self.blur_threshold = self.config.get('processing_settings', {}).get('blur_threshold', DEFAULT_PRACTICAL_THRESHOLD)
         
     def extract_features(self, input_dir):
         """Extract features from images in input directory"""
@@ -294,9 +314,21 @@ class ImageProcessor:
         # Calculate quality metrics
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
-        # Sharpness (blur detection)
-        laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-        is_blurry = laplacian_var < self.config['processing_settings']['blur_threshold']
+        # Sharpness (blur detection) - use optimized threshold
+        if self.use_optimized_blur:
+            # Use optimized blur detection system
+            analysis_result = self.quality_analyzer.analyze_single_image(image_path)
+            blur_score = analysis_result['blur_score']
+            is_blurry = blur_score < self.blur_threshold
+            
+            # Log blur detection details if debug enabled
+            if self.config.get('processing_settings', {}).get('blur_detection_optimized', {}).get('debug', False):
+                strategy = self.config.get('processing_settings', {}).get('blur_detection_optimized', {}).get('strategy', 'balanced')
+                logger.debug(f"Blur detection - File: {filename}, Score: {blur_score:.2f}, Threshold: {self.blur_threshold} ({strategy}), Blurry: {is_blurry}")
+        else:
+            # Legacy blur detection
+            laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+            is_blurry = laplacian_var < self.config['processing_settings']['blur_threshold']
         
         # Brightness
         brightness = gray.mean()
@@ -384,6 +416,10 @@ class ImageProcessor:
         logger.info(f"🔄 Duplicadas: {self.results['duplicates']}")
         logger.info(f"❌ Falhas: {self.results['failures']}")
         logger.info(f"Taxa de sucesso: {report['success_rate']:.1f}%")
+    
+    def _get_blur_threshold_by_strategy(self, strategy):
+        """Get blur threshold based on configured strategy"""
+        return get_threshold_by_strategy(strategy)
 
 def process_images_with_ai(input_folder, output_folder, ai_classifier=None):
     """
