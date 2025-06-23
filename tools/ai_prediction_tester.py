@@ -163,7 +163,7 @@ class AIPredictionTester:
     def _load_clean_data(self):
         """Carrega dados limpos"""
         # Load labels
-        labels_conn = sqlite3.connect('web_labeling/data/labels.db')
+        labels_conn = sqlite3.connect('data/labels/labels.db')
         labels_df = pd.read_sql_query('''
             SELECT filename, label_type, score, rejection_reason 
             FROM labels
@@ -171,7 +171,7 @@ class AIPredictionTester:
         labels_conn.close()
         
         # Load features  
-        features_conn = sqlite3.connect('web_labeling/data/features.db')
+        features_conn = sqlite3.connect('data/features/features.db')
         features_df = pd.read_sql_query('SELECT * FROM image_features', features_conn)
         features_conn.close()
         
@@ -195,12 +195,12 @@ class AIPredictionTester:
     def _get_unlabeled_with_features(self, limit):
         """Obtém imagens não rotuladas que têm features"""
         # Load all features
-        features_conn = sqlite3.connect('web_labeling/data/features.db')
+        features_conn = sqlite3.connect('data/features/features.db')
         features_df = pd.read_sql_query('SELECT * FROM image_features', features_conn)
         features_conn.close()
         
         # Load labeled filenames
-        labels_conn = sqlite3.connect('web_labeling/data/labels.db')
+        labels_conn = sqlite3.connect('data/labels/labels.db')
         labeled_df = pd.read_sql_query('SELECT DISTINCT filename FROM labels', labels_conn)
         labels_conn.close()
         
