@@ -1,32 +1,71 @@
-# Photo Culling - Sistema de Classificação Inteligente de Imagens
+# 📸 Photo Culling System v2.0
 
 [![Status](https://img.shields.io/badge/status-production--ready-green.svg)]()
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
+[![Blur Detection](https://img.shields.io/badge/Blur%20Detection-Optimized-brightgreen.svg)]()
 
-Sistema automatizado para classificação e seleção inteligente de imagens usando IA, com interface web para rotulagem manual e treinamento de modelos.
+**Sistema inteligente de classificação e curadoria de fotografias com detecção otimizada de blur**
 
-## ✨ Características Principais
+## 🆕 Novidades v2.0 - Sistema de Blur Detection Otimizado
 
-- 🤖 **Classificação com IA**: Modelos treinados automaticamente
-- 🎯 **Seleção Inteligente**: Algoritmo prioriza imagens mais valiosas para treinamento
-- 🌐 **Interface Web**: Rotulagem rápida e intuitiva
-- 📊 **Análise de Distribuição**: Balanceamento automático de classes
-- 🔍 **Logs Simplificados**: Mostra apenas inferência e motivo da seleção
+### ✨ Principais Funcionalidades
+- 🎯 **Detecção Inteligente de Blur** com validação supervisionada
+- 🎚️ **Estratégias Configuráveis** para diferentes casos de uso
+- 📊 **Análise de Qualidade Avançada** baseada em 440 exemplos rotulados
+- 🔄 **Pipeline Automatizado** de classificação e organização
+- 🌐 **Interface Web** para rotulação manual e treinamento
+- 🤖 **Aprendizado Supervisionado** para otimização contínua
 
-## 🚀 Início Rápido
+## 🎯 Estratégias de Blur Detection
 
+| Estratégia | Threshold | Caso de Uso | Taxa Remoção |
+|------------|-----------|-------------|--------------|
+| `conservative` | 50 | Arquivos pessoais | ~30% |
+| `balanced` | 78 | **Uso geral (padrão)** | ~50% |
+| `aggressive` | 145 | Portfólio profissional | ~70% |
+| `very_aggressive` | 98 | Exposições/impressão | ~60% |
+
+## 🚀 Como Usar
+
+### Classificação Automática com Blur Detection Otimizado
 ```bash
-# Clone o repositório
-git clone <repository-url>
-cd Photo-Culling
+# Processar imagens com sistema otimizado
+python main.py --classify --input-dir data/input
 
-# Configure o ambiente Python
-python -m venv .venv
-source .venv/bin/activate  # ou .venv\Scripts\activate no Windows
+# Ver demonstração do sistema integrado
+python demo_integrated_system.py
 
-# Instale dependências
-pip install -r requirements.txt
+# Teste completo de integração
+python final_integration_test.py
+```
+
+### Interface Web e Treinamento
+```bash
+# Interface web para rotulação
+python main.py --web-interface --port 5001
+
+# Extrair características
+python main.py --extract-features --input-dir data/input
+
+# Treinar modelo de IA
+python main.py --train-model
+```
+
+### Configuração do Sistema de Blur Detection
+
+Edite `config.json` para ajustar a estratégia:
+```json
+{
+  "processing_settings": {
+    "blur_detection_optimized": {
+      "enabled": true,
+      "strategy": "balanced",  // conservative, balanced, aggressive, very_aggressive
+      "debug": false
+    }
+  }
+}
+```
 
 # Inicie a interface web
 python main.py --web
@@ -105,3 +144,35 @@ Este projeto está licenciado sob a Licença MIT. Veja o arquivo LICENSE para de
 ---
 
 **Status**: ✅ Pronto para produção | **Última atualização**: Junho 2025
+
+## 🆕 NOVO: Sistema Otimizado de Blur Detection
+
+### ✅ Integração Completa (Junho 2025)
+O sistema agora inclui **detecção avançada de desfoque** com validação supervisionada:
+
+- 🎯 **4 estratégias otimizadas** para diferentes cenários
+- 📊 **Validação com 440 imagens** rotuladas manualmente  
+- ⚙️ **Configuração flexível** via `config.json`
+- 🔍 **Análise detalhada** com categorização em 5 níveis
+
+#### 🎚️ Estratégias Disponíveis
+| Estratégia | Threshold | Uso Recomendado |
+|------------|-----------|-----------------|
+| `conservative` | 50 | Arquivo pessoal/histórico |
+| `balanced` | 78 | **Uso geral (padrão)** |
+| `aggressive` | 145 | Portfólio profissional |
+| `very_aggressive` | 98 | Exposições/impressão |
+
+#### 🚀 Como Usar
+```bash
+# Classificação com blur detection otimizado
+python main.py --classify --input-dir data/input
+
+# Demonstração interativa
+python demo_integrated_system.py
+
+# Teste completo do pipeline
+python final_integration_test.py
+```
+
+---
