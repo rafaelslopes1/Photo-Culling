@@ -46,18 +46,18 @@ class PersonDetector:
             self.mp_hands = mp.solutions.hands
             self.mp_face_detection = mp.solutions.face_detection
             
-            # Initialize pose detection
+            # Initialize pose detection for multiple persons
             self.pose = self.mp_pose.Pose(
                 static_image_mode=True,
                 model_complexity=1,
                 enable_segmentation=False,
-                min_detection_confidence=0.5
+                min_detection_confidence=0.3  # Lower threshold to detect more people
             )
             
-            # Initialize face detection
+            # Initialize face detection with higher sensitivity
             self.face_detection = self.mp_face_detection.FaceDetection(
-                model_selection=0,  # 0 for short-range (2 meters), 1 for full-range
-                min_detection_confidence=0.5
+                model_selection=1,  # 1 for full-range detection (better for multiple people)
+                min_detection_confidence=0.3  # Lower threshold for more detections
             )
             
             self.initialized = True
@@ -69,13 +69,13 @@ class PersonDetector:
     
     def detect_persons_and_faces(self, image: np.ndarray) -> Dict:
         """
-        Detect persons and faces using MediaPipe
+        Detect multiple persons and faces using MediaPipe
         
         Args:
             image: Input image in BGR format (OpenCV format)
             
         Returns:
-            Dictionary containing detection results
+            Dictionary containing detection results with all persons
         """
         if not self.initialized:
             return self._get_empty_detection_result()
@@ -88,18 +88,47 @@ class PersonDetector:
             rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image_height, image_width = image.shape[:2]
             
-            # Detect poses
-            pose_results = self.pose.process(rgb_image)
-            
-            # Detect faces
+            # Detect faces first (more reliable for multiple people)
             face_results = self.face_detection.process(rgb_image)
             
             # Process detections
             persons = []
             faces = []
             
-            # Process pose detections
-            if pose_results.pose_landmarks:
+            # Process face detections and estimate persons from faces
+            if face_results.detections:
+                for i, detection in enumerate(face_results.detections):
+                    face_bbox = self._extract_face_bbox(detection, image_width, image_height)
+                    if face_bbox:
+                        # Store face detection
+                        faces.append({
+                            'id': i,
+                            'bbox': face_bbox,
+                            'confidence': detection.score[0],
+                            'landmarks': self._extract_face_landmarks(detection, image_width, image_height)
+                        })
+                        
+                        # Estimate person from face
+                        person_bbox = self._estimate_person_from_face_bbox(
+                            face_bbox, image_width, image_height
+                        )
+                        
+                        if person_bbox:
+                            # Try to get pose landmarks for this region if possible
+                            person_landmarks = self._try_extract_pose_for_region(
+                                rgb_image, person_bbox
+                            )
+                            
+                            person = self._create_person_detection(
+                                i, person_bbox, person_landmarks, 
+                                image, image_width, image_height
+                            )
+                            persons.append(person)
+            
+            # Also try global pose detection for cases where faces aren't detected
+            pose_results = self.pose.process(rgb_image)
+            if pose_results.pose_landmarks and len(persons) == 0:
+                # Only use global pose if no face-based persons were found
                 person_bbox = self._extract_person_bbox_from_pose(
                     pose_results.pose_landmarks, image_width, image_height
                 )
@@ -109,18 +138,6 @@ class PersonDetector:
                         image, image_width, image_height
                     )
                     persons.append(person)
-            
-            # Process face detections
-            if face_results.detections:
-                for i, detection in enumerate(face_results.detections):
-                    face_bbox = self._extract_face_bbox(detection, image_width, image_height)
-                    if face_bbox:
-                        faces.append({
-                            'id': i,
-                            'bbox': face_bbox,
-                            'confidence': detection.score[0],
-                            'landmarks': self._extract_face_landmarks(detection, image_width, image_height)
-                        })
             
             # Identify dominant person
             dominant_person = None
@@ -133,7 +150,7 @@ class PersonDetector:
                 'dominant_person': dominant_person,
                 'total_persons': len(persons),
                 'total_faces': len(faces),
-                'analysis_version': '1.0'
+                'analysis_version': '2.0'  # Updated version for multi-person
             }
             
         except Exception as e:
@@ -226,8 +243,11 @@ class PersonDetector:
             # Extract landmarks
             landmarks = []
             if pose_landmarks:
-                for landmark in pose_landmarks.landmark:
-                    landmarks.append((landmark.x * image_width, landmark.y * image_height))
+                if hasattr(pose_landmarks, 'landmark'):  # MediaPipe format
+                    for landmark in pose_landmarks.landmark:
+                        landmarks.append((landmark.x * image_width, landmark.y * image_height))
+                elif isinstance(pose_landmarks, list):  # Already converted format
+                    landmarks = pose_landmarks
             
             # Calculate dominance score
             dominance_score = self._calculate_person_dominance(
@@ -317,6 +337,88 @@ class PersonDetector:
                 self.face_detection.close()
         except:
             pass
+
+    def _estimate_person_from_face_bbox(self, face_bbox: Tuple[int, int, int, int], 
+                                       image_width: int, image_height: int) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Estimate person bounding box from face bounding box
+        
+        Args:
+            face_bbox: Face bounding box (x, y, w, h)
+            image_width: Image width
+            image_height: Image height
+            
+        Returns:
+            Estimated person bounding box (x, y, w, h) or None
+        """
+        try:
+            face_x, face_y, face_w, face_h = face_bbox
+            
+            # Calculate face center
+            face_center_x = face_x + face_w // 2
+            face_center_y = face_y + face_h // 2
+            
+            # Estimate person dimensions based on typical proportions
+            # Face is roughly 1/8 of total body height
+            estimated_body_height = face_h * 8
+            estimated_body_width = face_w * 2.5  # Rough body width estimate
+            
+            # Position person bbox (center it on face center)
+            person_x = max(0, int(face_center_x - estimated_body_width // 2))
+            person_y = max(0, int(face_y - face_h * 0.5))  # Start slightly above face
+            person_w = min(int(estimated_body_width), image_width - person_x)
+            person_h = min(int(estimated_body_height), image_height - person_y)
+            
+            # Ensure minimum size
+            if person_w < 50 or person_h < 100:
+                return None
+            
+            return (person_x, person_y, person_w, person_h)
+            
+        except Exception as e:
+            logger.error(f"Erro ao estimar pessoa a partir da face: {e}")
+            return None
+    
+    def _try_extract_pose_for_region(self, rgb_image: np.ndarray, 
+                                   person_bbox: Tuple[int, int, int, int]) -> Optional[List]:
+        """
+        Try to extract pose landmarks for a specific region
+        
+        Args:
+            rgb_image: RGB image
+            person_bbox: Person bounding box to analyze
+            
+        Returns:
+            Pose landmarks if found, None otherwise
+        """
+        try:
+            x, y, w, h = person_bbox
+            
+            # Extract region of interest
+            roi = rgb_image[y:y+h, x:x+w]
+            
+            if roi.size == 0:
+                return None
+            
+            # Try pose detection on the region
+            pose_results = self.pose.process(roi)
+            
+            if pose_results.pose_landmarks:
+                # Convert landmarks back to full image coordinates
+                adjusted_landmarks = []
+                for landmark in pose_results.pose_landmarks.landmark:
+                    # Convert normalized coordinates to full image coordinates
+                    full_x = x + landmark.x * w
+                    full_y = y + landmark.y * h
+                    adjusted_landmarks.append((full_x, full_y))
+                
+                return adjusted_landmarks
+            
+            return None
+            
+        except Exception as e:
+            logger.debug(f"Não foi possível extrair pose para região: {e}")
+            return None
 
 
 def detect_persons_in_image(image_path: str) -> Optional[Dict]:

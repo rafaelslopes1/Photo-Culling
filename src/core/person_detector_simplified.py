@@ -106,9 +106,13 @@ class SimplifiedPersonDetector:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             image_height, image_width = image.shape[:2]
             
-            # Detect faces
+            # Detect faces with lower thresholds for more detections
             faces = self.face_cascade.detectMultiScale(
-                gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
+                gray, 
+                scaleFactor=1.05,  # More thorough scaling
+                minNeighbors=3,    # Lower neighbor requirement 
+                minSize=(25, 25),  # Smaller minimum size
+                maxSize=(500, 500) # Maximum size limit
             )
             
             # Convert faces to persons (estimate body from face)
@@ -119,12 +123,12 @@ class SimplifiedPersonDetector:
                 # Create face detection
                 face_detections.append({
                     'id': i,
-                    'bbox': (x, y, w, h),
+                    'bbox': (int(x), int(y), int(w), int(h)),
                     'confidence': 0.8,  # Default confidence for Haar cascades
-                    'landmarks': [(x + w//2, y + h//2)]  # Center point as landmark
+                    'landmarks': [(int(x + w//2), int(y + h//2))]  # Center point as landmark
                 })
                 
-                # Estimate person bbox from face (rough estimation)
+                # Estimate person bbox from face (improved estimation)
                 person_bbox = self._estimate_person_from_face((x, y, w, h), image_width, image_height)
                 
                 if person_bbox:

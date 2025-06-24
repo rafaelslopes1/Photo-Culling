@@ -227,7 +227,11 @@ class FeatureExtractor:
             
             # Phase 1: Person detection and analysis
             if self.person_detector:
-                features.update(self._extract_person_features(image))
+                person_features = self._extract_person_features(image)
+                features.update(person_features)
+                
+                # Add compatibility mapping for person_count
+                features['person_count'] = person_features.get('total_persons', 0)
             
             # Advanced features
             if ADVANCED_FEATURES_AVAILABLE:
