@@ -1,0 +1,35 @@
+{
+  "analysis_summary": {
+    "total_images": 20,
+    "successful_analysis": 20,
+    "failed_analysis": 0,
+    "success_rate": 100.0
+  },
+  "quality_analysis": {
+    "blur_statistics": {
+      "mean_blur_score": 149.0490798149093,
+      "blur_threshold_50": "7",
+      "sharp_images": "13"
+    },
+    "brightness_analysis": {
+      "mean_brightness": 128.16324630208334,
+      "dark_images": "2",
+      "bright_images": "1",
+      "normal_exposure": "17"
+    },
+    "detection_analysis": {
+      "images_with_people": "20",
+      "images_with_faces": "0",
+      "average_people_per_image": 1.0,
+      "multi_person_images": "0"
+    },
+    "overall_quality": {
+      "mean_score": 73.75,
+      "excellent_images": "7",
+      "good_images": "13",
+      "fair_images": "0",
+      "poor_images": "0",
+      "reject_images": "0"
+    }
+  }
+}
