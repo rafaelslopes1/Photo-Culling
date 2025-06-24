@@ -227,3 +227,59 @@ input/
 output/
 
 **/*.JPG
+
+# ==========================================
+# PHOTO CULLING SYSTEM - SPECIFIC RULES
+# ==========================================
+
+# Input images - never commit user photos
+data/input/*.jpg
+data/input/*.jpeg
+data/input/*.png
+data/input/*.JPG
+data/input/*.JPEG
+data/input/*.PNG
+data/input/*.gif
+data/input/*.GIF
+
+# Generated visualizations - selective exclusion
+data/quality/visualizations/*_detection_test.png
+data/quality/visualizations/*_multi_person_analysis.png
+data/quality/visualizations/temp_*.png
+data/quality/visualizations/test_*.png
+data/quality/visualizations/debug_*.png
+# Keep important reports and summaries
+!data/quality/visualizations/FINAL_*.png
+!data/quality/visualizations/*_summary.png
+!data/quality/visualizations/*_report.png
+!data/quality/visualizations/*.md
+
+# Database files - keep structure, ignore journals
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Large model files - selective exclusion
+data/models/*.h5
+data/models/*.pkl
+data/models/*.pt
+data/models/*.pth
+data/models/*.onnx
+# Keep essential models
+!data/models/haarcascade_frontalface_default.xml
+!data/models/best_model.joblib
+!data/models/current_model.joblib
+!data/models/*_metadata.json
+
+# Temporary analysis files
+*_temp.json
+*_debug.json
+*_cache.json
+analysis_temp/
+detection_temp/
+
+# Performance and debug logs
+performance_*.log
+timing_*.log
+memory_*.log
+debug_*.log
