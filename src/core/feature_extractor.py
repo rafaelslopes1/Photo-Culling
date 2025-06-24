@@ -70,6 +70,15 @@ except ImportError:
     PHASE2_5_FEATURES_AVAILABLE = False
     logging.warning("Phase 2.5 critical improvements not available")
 
+# Phase 3 face recognition (optional)
+try:
+    from .face_recognition_system import FaceRecognitionSystem
+    PHASE3_FEATURES_AVAILABLE = True
+    logging.info("Phase 3 face recognition system available")
+except ImportError:
+    PHASE3_FEATURES_AVAILABLE = False
+    logging.warning("Phase 3 face recognition system not available")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -126,6 +135,18 @@ class FeatureExtractor:
             self.overexposure_analyzer = None
             self.unified_scoring_system = None
             logging.warning("Phase 2.5 critical improvements not available")
+        
+        # Initialize Phase 3 face recognition system
+        if PHASE3_FEATURES_AVAILABLE:
+            try:
+                self.face_recognition_system = FaceRecognitionSystem()
+                logging.info("Phase 3 face recognition system initialized successfully")
+            except Exception as e:
+                logging.error(f"Failed to initialize Phase 3 face recognition: {e}")
+                self.face_recognition_system = None
+        else:
+            self.face_recognition_system = None
+            logging.warning("Phase 3 face recognition system not available")
         
     def init_database(self):
         """Inicializa banco de dados para features"""
@@ -230,6 +251,12 @@ class FeatureExtractor:
                 overall_person_rating TEXT,
                 advanced_analysis_version TEXT,
                 
+                -- Face recognition features (Phase 3 - new)
+                face_encodings_count INTEGER,
+                face_clusters_found INTEGER,
+                similar_faces_count INTEGER,
+                face_recognition_data TEXT,
+                
                 -- Advanced features
                 visual_complexity REAL,
                 aesthetic_score REAL,
@@ -309,6 +336,11 @@ class FeatureExtractor:
                 
                 # Add compatibility mapping for person_count
                 features['person_count'] = person_features.get('total_persons', 0)
+                
+                # Phase 3: Face recognition (must be before advanced person analysis)
+                if self.face_recognition_system and person_features.get('faces', 0) > 0:
+                    face_recognition_features = self._extract_face_recognition_features(image_path)
+                    features.update(face_recognition_features)
                 
                 # Phase 2: Advanced person analysis
                 if self.advanced_person_analyzer and person_features.get('total_persons', 0) > 0:
@@ -1129,6 +1161,45 @@ class FeatureExtractor:
             'unified_recommendation': 'system_not_available',
             'unified_is_recoverable': True
         }
+    
+    def _extract_face_recognition_features(self, image_path):
+        """Extract face recognition features (Phase 3)"""
+        if self.face_recognition_system is None:
+            return {
+                'face_encodings_count': 0,
+                'face_clusters_found': 0,
+                'similar_faces_count': 0,
+                'face_recognition_data': json.dumps({})
+            }
+        
+        try:
+            # Process image for face recognition
+            result = self.face_recognition_system.process_image_for_face_recognition(image_path)
+            
+            similar_faces = result.get('similar_faces', [])
+            
+            features = {
+                'face_encodings_count': result.get('faces_found', 0),
+                'face_clusters_found': 0,  # Will be updated when clustering is performed
+                'similar_faces_count': len(similar_faces),
+                'face_recognition_data': json.dumps({
+                    'status': result.get('status', 'unknown'),
+                    'faces_stored': result.get('faces_stored', 0),
+                    'similar_faces': similar_faces[:10],  # Store first 10 similar faces
+                    'processing_successful': result.get('status') == 'success'
+                })
+            }
+            
+            return features
+            
+        except Exception as e:
+            logging.error(f"Erro na extração de características de reconhecimento facial: {e}")
+            return {
+                'face_encodings_count': 0,
+                'face_clusters_found': 0,
+                'similar_faces_count': 0,
+                'face_recognition_data': json.dumps({'error': str(e)})
+            }
 
 
 def extract_features_from_folder(folder_path, output_db=None, max_workers=None):

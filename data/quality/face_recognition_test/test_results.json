@@ -1,0 +1,33 @@
+{
+  "test_summary": {
+    "images_processed": 10,
+    "successful_images": 10,
+    "total_faces_detected": 11,
+    "avg_processing_time": 0.09170453548431397,
+    "processing_speed": 10.904586067840121,
+    "clusters_created": 3
+  },
+  "detailed_report": {
+    "face_statistics": {
+      "total_faces": 11,
+      "total_images": 10,
+      "avg_faces_per_image": 1.1,
+      "images_with_multiple_faces": 1,
+      "avg_confidence": 0.8445077213374051
+    },
+    "cluster_statistics": {
+      "total_clusters": 3,
+      "avg_cluster_size": 2.6666666666666665,
+      "largest_cluster_size": 4,
+      "clustered_faces": 8,
+      "clustering_efficiency": 0.7272727272727273
+    },
+    "top_clusters": [
+      "FaceCluster(cluster_id='cluster_1_1750806445', representative_face_id='IMG_0239_face_0_1750806444', face_ids=['IMG_0239_face_0_1750806444', 'IMG_0243_face_0_1750806444', 'IMG_0244_face_0_1750806444', 'IMG_0304_face_0_1750806444'], cluster_center={'dim_0': -0.1254544984549284, 'dim_1': 0.05129538103938103, 'dim_2': 0.09796225279569626, 'dim_3': -0.07912341225892305, 'dim_4': -0.12239128537476063, 'dim_5': -0.028499606531113386, 'dim_6': -0.029623671784065664, 'dim_7': -0.09553273022174835, 'dim_8': 0.11416460387408733, 'dim_9': -0.1259838780388236, 'avg_confidence': 0.8405796438455582, 'encoding_count': 4, 'center_norm': 1.3372535875036642}, cluster_size=4, confidence_avg=0.8405796438455582, image_count=4, created_timestamp='2025-06-24T20:07:25.259536', updated_timestamp='2025-06-24T20:07:25.259537')",
+      "FaceCluster(cluster_id='cluster_0_1750806445', representative_face_id='IMG_0001_face_0_1750806444', face_ids=['IMG_0001_face_0_1750806444', 'IMG_0304_face_1_1750806444'], cluster_center={'dim_0': -0.14163335412740707, 'dim_1': 0.06724117137491703, 'dim_2': 0.07799050211906433, 'dim_3': -0.038304767571389675, 'dim_4': -0.1747976616024971, 'dim_5': 0.02447818685323, 'dim_6': -0.06509766448289156, 'dim_7': -0.05369954835623503, 'dim_8': 0.0625824648886919, 'dim_9': -0.10943577438592911, 'avg_confidence': 0.7346057295799255, 'encoding_count': 2, 'center_norm': 1.4473517248742696}, cluster_size=2, confidence_avg=0.7346057295799255, image_count=2, created_timestamp='2025-06-24T20:07:25.258800', updated_timestamp='2025-06-24T20:07:25.258802')",
+      "FaceCluster(cluster_id='cluster_2_1750806445', representative_face_id='IMG_0334_face_0_1750806445', face_ids=['IMG_0285_face_0_1750806444', 'IMG_0334_face_0_1750806445'], cluster_center={'dim_0': -0.12241465598344803, 'dim_1': 0.06631488353013992, 'dim_2': 0.05197150632739067, 'dim_3': -0.104544248431921, 'dim_4': -0.11490548029541969, 'dim_5': 0.00924424733966589, 'dim_6': -0.060034655034542084, 'dim_7': -0.1807103306055069, 'dim_8': 0.18757105618715286, 'dim_9': -0.1383858472108841, 'avg_confidence': 0.838215559720993, 'encoding_count': 2, 'center_norm': 1.4031542844576603}, cluster_size=2, confidence_avg=0.838215559720993, image_count=2, created_timestamp='2025-06-24T20:07:25.259921', updated_timestamp='2025-06-24T20:07:25.259922')"
+    ],
+    "generated_at": "2025-06-24T20:07:25.260721"
+  },
+  "test_timestamp": "2025-06-24 20:07:25"
+}
