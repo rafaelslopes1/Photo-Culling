@@ -481,25 +481,54 @@ class FeatureExtractor:
         }
     
     def _extract_object_features(self, image):
-        """Extrai características de objetos"""
+        """Extrai características de objetos usando PersonDetector"""
         features = {
             'face_count': 0,
             'face_areas': json.dumps([]),
             'skin_ratio': 0.0
         }
         
-        if self.face_cascade is not None:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            faces = self.face_cascade.detectMultiScale(gray, 1.1, 4)
+        try:
+            # Use PersonDetector instead of face_cascade for better accuracy
+            person_result = self.person_detector.detect_persons_and_faces(image)
+            faces_data = person_result.get('faces', [])
             
-            features['face_count'] = int(len(faces))  # Ensure it's a Python int
+            features['face_count'] = len(faces_data)
             
-            if len(faces) > 0:
-                face_areas = [int(w * h) for (x, y, w, h) in faces]  # Ensure ints
+            if len(faces_data) > 0:
+                # Extract face areas from MediaPipe detections
+                face_areas = []
+                face_regions = []
+                
+                for face in faces_data:
+                    if 'bbox' in face:
+                        x, y, w, h = face['bbox']
+                        face_areas.append(int(w * h))
+                        face_regions.append((x, y, w, h))
+                
                 features['face_areas'] = json.dumps(face_areas)
                 
-                # Estimate skin ratio
-                features['skin_ratio'] = self._estimate_skin_ratio(image, faces)
+                # Estimate skin ratio using detected faces
+                if face_regions:
+                    features['skin_ratio'] = self._estimate_skin_ratio(image, face_regions)
+        
+        except Exception as e:
+            logger.warning(f"Erro na detecção de faces: {e}")
+            # Fallback to OpenCV face cascade if available
+            if self.face_cascade is not None:
+                try:
+                    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                    faces = self.face_cascade.detectMultiScale(gray, 1.1, 4)
+                    
+                    features['face_count'] = int(len(faces))
+                    
+                    if len(faces) > 0:
+                        face_areas = [int(w * h) for (x, y, w, h) in faces]
+                        features['face_areas'] = json.dumps(face_areas)
+                        features['skin_ratio'] = self._estimate_skin_ratio(image, faces)
+                
+                except Exception as e2:
+                    logger.warning(f"Fallback face detection também falhou: {e2}")
         
         return features
     

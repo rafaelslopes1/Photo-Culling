@@ -137,20 +137,30 @@ class OptimizedImageAnalyzer:
             features['dark_pixel_ratio'] = dark_pixels
             features['bright_pixel_ratio'] = bright_pixels
             
-            # Quick person detection (simplified)
+            # Quick person detection and face detection
             try:
-                persons = self.person_detector.detect_persons_and_faces(image)
-                if isinstance(persons, list):
+                persons_data = self.person_detector.detect_persons_and_faces(image)
+                
+                # Extract persons and faces separately
+                if isinstance(persons_data, dict):
+                    persons = persons_data.get('persons', [])
+                    faces = persons_data.get('faces', [])
+                    
                     features['person_count'] = len(persons)
-                    features['face_count'] = sum(1 for p in persons if isinstance(p, dict) and p.get('face_bbox'))
+                    features['face_count'] = len(faces)
+                elif isinstance(persons_data, list):
+                    # Legacy format - assume persons
+                    features['person_count'] = len(persons_data)
+                    features['face_count'] = sum(1 for p in persons_data if isinstance(p, dict) and p.get('face_bbox'))
                 else:
-                    features['person_count'] = 1 if persons else 0
-                    features['face_count'] = 1 if persons and isinstance(persons, dict) and persons.get('face_bbox') else 0
+                    features['person_count'] = 1 if persons_data else 0
+                    features['face_count'] = 1 if persons_data and isinstance(persons_data, dict) and persons_data.get('face_bbox') else 0
+                    
             except Exception as e:
                 print(f"   ⚠️ Detecção de pessoas falhou: {e}")
                 features['person_count'] = 0
                 features['face_count'] = 0
-                persons = []
+                persons_data = {}
             
             # Quick quality assessment
             quality_score = 0
@@ -208,7 +218,7 @@ class OptimizedImageAnalyzer:
                 'filename': Path(image_path).name,
                 'path': image_path,
                 'features': features,
-                'persons': persons if isinstance(persons, list) else [persons] if persons else [],
+                'persons': persons_data.get('persons', []) if isinstance(persons_data, dict) else [],
                 'image_shape': image.shape,
                 'analysis_timestamp': datetime.now().isoformat()
             }

@@ -7,26 +7,26 @@
   },
   "quality_analysis": {
     "blur_statistics": {
-      "mean_blur_score": 149.0490798149093,
-      "blur_threshold_50": "7",
-      "sharp_images": "13"
+      "mean_blur_score": 131.50711587632406,
+      "blur_threshold_50": "11",
+      "sharp_images": "9"
     },
     "brightness_analysis": {
-      "mean_brightness": 128.16324630208334,
-      "dark_images": "2",
-      "bright_images": "1",
+      "mean_brightness": 122.01167483072918,
+      "dark_images": "3",
+      "bright_images": "0",
       "normal_exposure": "17"
     },
     "detection_analysis": {
-      "images_with_people": "20",
-      "images_with_faces": "0",
-      "average_people_per_image": 1.0,
-      "multi_person_images": "0"
+      "images_with_people": "19",
+      "images_with_faces": "19",
+      "average_people_per_image": 1.15,
+      "multi_person_images": "4"
     },
     "overall_quality": {
-      "mean_score": 73.75,
-      "excellent_images": "7",
-      "good_images": "13",
+      "mean_score": 78.0,
+      "excellent_images": "8",
+      "good_images": "12",
       "fair_images": "0",
       "poor_images": "0",
       "reject_images": "0"
