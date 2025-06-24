@@ -1,0 +1,27 @@
+{
+  "original_image": "IMG_0244.JPG",
+  "timestamp": "2025-06-23T22:27:13.285195",
+  "dimensions": {
+    "width": 1600,
+    "height": 2400
+  },
+  "detection_results": {
+    "total_persons": 1,
+    "dominant_person": {
+      "bounding_box": [
+        483,
+        460,
+        734,
+        1722
+      ],
+      "score": 0.4295529412712065,
+      "analysis_data": {
+        "area_ratio": 0.329153125,
+        "centrality": 0.9092207877065713,
+        "confidence": 0.8,
+        "cropping_issues": []
+      }
+    },
+    "detector_type": "OpenCV"
+  }
+}
