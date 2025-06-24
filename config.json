@@ -1,0 +1,165 @@
+{
+  "processing_settings": {
+    "blur_threshold": 60,
+    "brightness_threshold": 40,
+    "nsfw_threshold": 0.7,
+    "quality_score_weights": {
+      "sharpness": 1.0,
+      "brightness": 1.0
+    },
+    "blur_detection_optimized": {
+      "enabled": true,
+      "strategy": "conservative_practical",
+      "strategies": {
+        "conservative_practical": {
+          "threshold": 30,
+          "description": "Remove apenas blur extremo - deixa decisões subjetivas para o usuário",
+          "removal_rate": "10-15%",
+          "use_case": "Primeira triagem - remove apenas casos óbvios"
+        },
+        "moderate_practical": {
+          "threshold": 60,
+          "description": "Threshold moderado - boa separação entre sharp e blur",
+          "removal_rate": "25-35%",
+          "use_case": "Triagem média - remove blur claro mas preserva casos limítrofes"
+        },
+        "quality_focused": {
+          "threshold": 100,
+          "description": "Foco em qualidade técnica - pode rejeitar imagens com valor contextual",
+          "removal_rate": "40-60%",
+          "use_case": "Para portfólios onde qualidade técnica é prioridade"
+        },
+        "conservative": {
+          "threshold": 50,
+          "description": "Generic conservative - only removes very blurry images"
+        },
+        "balanced": {
+          "threshold": 78,
+          "description": "Generic balanced - balanced between quality and retention"
+        },
+        "aggressive": {
+          "threshold": 145,
+          "description": "Generic aggressive - removes more images for higher quality"
+        },
+        "very_aggressive": {
+          "threshold": 98,
+          "description": "Generic very aggressive - maximum quality, lower retention"
+        },
+        "smart_conservative": {
+          "threshold": 12,
+          "description": "Smart conservative - high precision (12)"
+        },
+        "smart_balanced": {
+          "threshold": 909,
+          "description": "Smart balanced - optimal F1 score (909)"
+        },
+        "smart_aggressive": {
+          "threshold": 909,
+          "description": "Smart aggressive - high recall (909)"
+        }
+      },
+      "hybrid_analysis": {
+        "enabled": true,
+        "based_on_manual_labels": true,
+        "rejection_patterns": {
+          "blur_mean": 261.54,
+          "cropped_mean": 63.46,
+          "dark_mean": 66.28,
+          "light_mean": 192.02,
+          "other_mean": 599.04
+        },
+        "insight": "User rejections include subjective criteria beyond technical blur",
+        "recommendation": "Use blur detection as assistant tool, not absolute decision maker"
+      },
+      "supervised_validation": {
+        "enabled": true,
+        "database_path": "data/labels/labels.db",
+        "min_confidence": 0.7,
+        "samples_analyzed": 385,
+        "blur_rejections": 190,
+        "quality_images": 195
+      }
+    },
+    "image_extensions": [
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".bmp",
+      ".gif",
+      ".tiff",
+      ".webp"
+    ],
+    "progress_update_interval": 10,
+    "multiprocessing": {
+      "enabled": true,
+      "max_workers": null,
+      "chunk_size": 4
+    },
+    "face_detection": {
+      "enabled": true,
+      "min_face_size": 30,
+      "min_face_ratio": 0.005,
+      "scale_factor": 1.1,
+      "min_neighbors": 4,
+      "use_advanced_detection": false,
+      "multiple_scales": true,
+      "detect_partial_faces": true,
+      "debug": false
+    },
+    "advanced_quality_detection": {
+      "enabled": false,
+      "debug": false,
+      "blur_detection": {
+        "use_multiple_algorithms": true,
+        "adaptive_thresholds": true
+      },
+      "lighting_analysis": {
+        "detect_artistic_lowkey": true,
+        "analyze_histogram": true,
+        "check_local_contrast": true
+      }
+    },
+    "phase1_analysis": {
+      "enabled": true,
+      "exposure_analysis": {
+        "enabled": true,
+        "thresholds": {
+          "extremely_dark": 40,
+          "dark": 80,
+          "bright": 180,
+          "extremely_bright": 220
+        },
+        "quality_threshold": 0.6
+      },
+      "person_analysis": {
+        "enabled": true,
+        "min_person_area_ratio": 0.05,
+        "min_detection_confidence": 0.5,
+        "dominance_weights": {
+          "area_ratio": 0.4,
+          "centrality": 0.3,
+          "local_sharpness": 0.3
+        },
+        "cropping_tolerance": 10
+      }
+    },
+    "dnn_face_detection": {
+      "enabled": false,
+      "model_path": "",
+      "config_path": ""
+    }
+  },
+  "output_folders": {
+    "selected": "selected",
+    "duplicates": "duplicates",
+    "blurry": "blurry",
+    "low_light": "low_light",
+    "nsfw": "nsfw",
+    "no_faces": "no_faces",
+    "failed": "failed"
+  },
+  "duplicate_detection": {
+    "hash_size": 8,
+    "hash_method": "average_hash"
+  }
+}

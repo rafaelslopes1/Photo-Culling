@@ -1,0 +1,36 @@
+{
+  "training_date": "2025-06-11T19:59:11.521434",
+  "dataset_info": {
+    "total_samples": 16,
+    "num_classes": 6,
+    "class_distribution": {
+      "quality_4.0": 5,
+      "quality_5.0": 4,
+      "reject_blur": 3,
+      "reject_dark": 2,
+      "quality_3.0": 1,
+      "quality_2.0": 1
+    },
+    "num_features": 29
+  },
+  "model_results": {
+    "random_forest": {
+      "accuracy": 1.0,
+      "cv_mean": 0.0,
+      "cv_std": 0.0,
+      "best_params": "default"
+    },
+    "gradient_boosting": {
+      "accuracy": 1.0,
+      "cv_mean": 0.0,
+      "cv_std": 0.0,
+      "best_params": "default"
+    },
+    "logistic_regression": {
+      "accuracy": 1.0,
+      "cv_mean": 0.0,
+      "cv_std": 0.0,
+      "best_params": "default"
+    }
+  }
+}
