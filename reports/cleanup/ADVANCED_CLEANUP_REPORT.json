@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-06-24T20:41:39.431971",
+  "categories": {
+    "duplicate_reports": [
+      "CLEANUP_FINAL_SUMMARY.md",
+      "CLEANUP_SUCCESS_REPORT.md",
+      "CLEANUP_ANALYSIS.json",
+      "CLEANUP_EXECUTION_REPORT.json",
+      "MAINTENANCE_REPORT.json"
+    ],
+    "old_json_files": [],
+    "redundant_docs": [
+      "docs/IMPLEMENTATION_COMPLETE_REPORT.md",
+      "docs/IMG_0001_DETAILED_ANALYSIS.md"
+    ],
+    "temp_files": [],
+    "empty_dirs": [
+      ".venv/include",
+      ".git/objects/info",
+      ".git/refs/tags"
+    ]
+  },
+  "summary": {
+    "total_removed": 10,
+    "duplicate_reports": 5,
+    "old_json_files": 0,
+    "redundant_docs": 2,
+    "temp_files": 0,
+    "empty_dirs": 3
+  }
+}
