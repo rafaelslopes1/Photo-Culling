@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-06-24T20:54:12.535793",
+  "large_files": [],
+  "database_sizes": {
+    "data/features/features.db": 1.25,
+    "data/labels/labels.db": 0.11
+  },
+  "temp_files": [],
+  "pycache_dirs": [],
+  "git_status": {
+    "untracked_files": [],
+    "modified_files": [],
+    "staged_files": []
+  },
+  "summary": {
+    "total_large_files": 0,
+    "total_temp_files": 0,
+    "total_pycache_dirs": 0,
+    "total_db_size_mb": 1.36,
+    "recommendations": []
+  }
+}

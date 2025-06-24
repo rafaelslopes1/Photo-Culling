@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-06-24T20:44:40.884716",
+  "timestamp": "2025-06-24T20:54:31.936945",
   "analysis": {
     "duplicate_files": [],
     "large_files": [
@@ -3507,10 +3507,15 @@
     "temp_files": [],
     "cache_dirs": [],
     "empty_dirs": [],
-    "redundant_reports": [],
+    "redundant_reports": [
+      "FINAL_CLEANUP_REPORT.md",
+      "MAINTENANCE_REPORT.json",
+      "FINAL_CLEANUP_REPORT.md"
+    ],
     "old_docs": []
   },
   "recommendations": [
-    "Revisar 875 arquivos grandes (>1MB)"
+    "Revisar 875 arquivos grandes (>1MB)",
+    "Consolidar 3 relatórios redundantes"
   ]
 }
