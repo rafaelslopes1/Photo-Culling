@@ -34,6 +34,24 @@ except ImportError:
     ADVANCED_FEATURES_AVAILABLE = False
     logging.warning("Advanced features not available. Install scikit-image and scipy.")
 
+# Phase 1 new modules (optional)
+try:
+    from .exposure_analyzer import ExposureAnalyzer
+    from .person_detector import PersonDetector
+    PHASE1_FEATURES_AVAILABLE = True
+    PERSON_DETECTOR_TYPE = "mediapipe"
+except ImportError:
+    try:
+        from .exposure_analyzer import ExposureAnalyzer
+        from .person_detector_simplified import SimplifiedPersonDetector as PersonDetector
+        PHASE1_FEATURES_AVAILABLE = True
+        PERSON_DETECTOR_TYPE = "simplified"
+        logging.warning("Using simplified person detector (MediaPipe not available)")
+    except ImportError:
+        PHASE1_FEATURES_AVAILABLE = False
+        PERSON_DETECTOR_TYPE = "none"
+        logging.warning("Phase 1 features not available. Check exposure_analyzer and person_detector modules.")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,6 +66,21 @@ class FeatureExtractor:
         self.db_path = db_path
         self.init_database()
         self.face_cascade = self._load_face_detector()
+        
+        # Initialize Phase 1 analyzers
+        if PHASE1_FEATURES_AVAILABLE:
+            try:
+                self.exposure_analyzer = ExposureAnalyzer()
+                self.person_detector = PersonDetector()
+                logging.info(f"Phase 1 analyzers initialized successfully with {PERSON_DETECTOR_TYPE} person detector")
+            except Exception as e:
+                logging.error(f"Failed to initialize Phase 1 analyzers: {e}")
+                self.exposure_analyzer = None
+                self.person_detector = None
+        else:
+            self.exposure_analyzer = None
+            self.person_detector = None
+            logging.warning("Phase 1 analyzers not available")
         
     def init_database(self):
         """Inicializa banco de dados para features"""
@@ -103,6 +136,22 @@ class FeatureExtractor:
                 face_count INTEGER,
                 face_areas TEXT,
                 skin_ratio REAL,
+                
+                -- Person analysis (Phase 1 - new)
+                total_persons INTEGER,
+                dominant_person_score REAL,
+                dominant_person_bbox TEXT,
+                dominant_person_cropped BOOLEAN,
+                dominant_person_blur REAL,
+                person_analysis_data TEXT,
+                
+                -- Exposure analysis (Phase 1 - new)
+                exposure_level TEXT,
+                exposure_quality_score REAL,
+                mean_brightness REAL,
+                otsu_threshold REAL,
+                histogram_stats TEXT,
+                is_properly_exposed BOOLEAN,
                 
                 -- Advanced features
                 visual_complexity REAL,
@@ -171,6 +220,14 @@ class FeatureExtractor:
             
             # Object detection
             features.update(self._extract_object_features(image))
+            
+            # Phase 1: Exposure analysis
+            if self.exposure_analyzer:
+                features.update(self._extract_exposure_features(image))
+            
+            # Phase 1: Person detection and analysis
+            if self.person_detector:
+                features.update(self._extract_person_features(image))
             
             # Advanced features
             if ADVANCED_FEATURES_AVAILABLE:
@@ -339,16 +396,128 @@ class FeatureExtractor:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             faces = self.face_cascade.detectMultiScale(gray, 1.1, 4)
             
-            features['face_count'] = len(faces)
+            features['face_count'] = int(len(faces))  # Ensure it's a Python int
             
             if len(faces) > 0:
-                face_areas = [(w * h) for (x, y, w, h) in faces]
+                face_areas = [int(w * h) for (x, y, w, h) in faces]  # Ensure ints
                 features['face_areas'] = json.dumps(face_areas)
                 
                 # Estimate skin ratio
                 features['skin_ratio'] = self._estimate_skin_ratio(image, faces)
         
         return features
+    
+    def _extract_exposure_features(self, image):
+        """Extract exposure analysis features (Phase 1)"""
+        if self.exposure_analyzer is None:
+            return {
+                'exposure_level': 'adequate',
+                'exposure_quality_score': 0.5,
+                'mean_brightness': 128.0,
+                'otsu_threshold': 128.0,
+                'histogram_stats': json.dumps({}),
+                'is_properly_exposed': True
+            }
+        
+        try:
+            exposure_result = self.exposure_analyzer.analyze_exposure(image)
+            
+            return {
+                'exposure_level': str(exposure_result.get('exposure_level', 'adequate')),
+                'exposure_quality_score': float(exposure_result.get('quality_score', 0.5)),
+                'mean_brightness': float(exposure_result.get('mean_brightness', 128.0)),
+                'otsu_threshold': float(exposure_result.get('otsu_threshold', 128.0)),
+                'histogram_stats': json.dumps(exposure_result.get('histogram_stats', {})),
+                'is_properly_exposed': bool(exposure_result.get('is_properly_exposed', True))
+            }
+        except Exception as e:
+            logging.error(f"Erro na análise de exposição: {e}")
+            return {
+                'exposure_level': 'adequate',
+                'exposure_quality_score': 0.5,
+                'mean_brightness': 128.0,
+                'otsu_threshold': 128.0,
+                'histogram_stats': json.dumps({}),
+                'is_properly_exposed': True
+            }
+    
+    def _extract_person_features(self, image):
+        """Extract person detection and analysis features (Phase 1)"""
+        if self.person_detector is None:
+            return {
+                'total_persons': 0,
+                'dominant_person_score': 0.0,
+                'dominant_person_bbox': json.dumps([]),
+                'dominant_person_cropped': False,
+                'dominant_person_blur': 0.0,
+                'person_analysis_data': json.dumps({})
+            }
+        
+        try:
+            person_result = self.person_detector.detect_persons_and_faces(image)
+            
+            # Initialize default values
+            features = {
+                'total_persons': person_result.get('total_persons', 0),
+                'dominant_person_score': 0.0,
+                'dominant_person_bbox': json.dumps([]),
+                'dominant_person_cropped': False,
+                'dominant_person_blur': 0.0,
+                'person_analysis_data': json.dumps({})
+            }
+            
+            # Process dominant person if exists
+            dominant_person = person_result.get('dominant_person')
+            if dominant_person:
+                features['dominant_person_score'] = float(dominant_person.dominance_score)
+                features['dominant_person_bbox'] = json.dumps([int(x) for x in dominant_person.bounding_box])
+                features['dominant_person_blur'] = float(dominant_person.local_sharpness)
+                
+                # Check if person is cropped (touches image edges)
+                cropping_issues = self._detect_person_cropping(
+                    dominant_person.bounding_box, image.shape
+                )
+                features['dominant_person_cropped'] = bool(len(cropping_issues) > 0)
+                
+                # Store additional analysis data
+                analysis_data = {
+                    'area_ratio': float(dominant_person.area_ratio),
+                    'centrality': float(dominant_person.centrality),
+                    'confidence': float(dominant_person.confidence),
+                    'cropping_issues': list(cropping_issues)
+                }
+                features['person_analysis_data'] = json.dumps(analysis_data)
+            
+            return features
+            
+        except Exception as e:
+            logging.error(f"Erro na análise de pessoas: {e}")
+            return {
+                'total_persons': 0,
+                'dominant_person_score': 0.0,
+                'dominant_person_bbox': json.dumps([]),
+                'dominant_person_cropped': False,
+                'dominant_person_blur': 0.0,
+                'person_analysis_data': json.dumps({})
+            }
+    
+    def _detect_person_cropping(self, bbox, image_shape):
+        """Detect if person is cropped at image boundaries"""
+        cropping_issues = []
+        x, y, w, h = bbox
+        img_h, img_w = image_shape[:2]
+        tolerance = 10  # pixels
+        
+        if x <= tolerance:
+            cropping_issues.append('left_edge')
+        if y <= tolerance:
+            cropping_issues.append('top_edge')
+        if x + w >= img_w - tolerance:
+            cropping_issues.append('right_edge')
+        if y + h >= img_h - tolerance:
+            cropping_issues.append('bottom_edge')
+        
+        return cropping_issues
     
     def _extract_advanced_features(self, image):
         """Extrai características avançadas (se disponível)"""
@@ -452,8 +621,8 @@ class FeatureExtractor:
         edge_density = np.sum(edges) / edges.size
         
         # Texture measure
-        glcm = feature.greycomatrix(gray.astype(np.uint8), [1], [0], 256, symmetric=True, normed=True)
-        contrast = feature.greycoprops(glcm, 'contrast')[0, 0]
+        glcm = feature.graycomatrix(gray.astype(np.uint8), [1], [0], 256, symmetric=True, normed=True)
+        contrast = feature.graycoprops(glcm, 'contrast')[0, 0]
         
         return edge_density * contrast
     
