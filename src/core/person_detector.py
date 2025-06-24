@@ -35,11 +35,25 @@ class PersonDetector:
     """
     Person detection and analysis using MediaPipe
     Implements dominant person identification and quality assessment
+    Optimized for Mac M3 GPU acceleration when available
     """
     
     def __init__(self):
-        """Initialize MediaPipe components"""
+        """Initialize MediaPipe components with GPU optimization"""
         try:
+            # Setup GPU optimization for Mac M3
+            try:
+                from ..utils.gpu_optimizer import MacM3Optimizer
+                config, system_info = MacM3Optimizer.setup_quiet_and_optimized()
+                
+                if config['gpu_enabled']:
+                    logger.info(f"GPU aceleração ativada - {system_info['chip_type']} com {system_info['gpu_cores']} cores")
+                else:
+                    logger.info("Usando otimização de CPU")
+                    
+            except ImportError:
+                logger.info("Usando configuração padrão")
+            
             # Initialize MediaPipe
             self.mp_pose = mp.solutions.pose
             self.mp_drawing = mp.solutions.drawing_utils
