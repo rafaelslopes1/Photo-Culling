@@ -1,0 +1,33 @@
+{
+  "image_path": "/Users/rafaellopes/www/Fotop/Photo-Culling/data/input/IMG_0001.JPG",
+  "analysis_timestamp": "2025-06-24",
+  "overexposure_analysis": {
+    "face_overexposed_ratio": 0.1599642316003875,
+    "torso_overexposed_ratio": 0.2795916147379217,
+    "face_mean_brightness": 100.10959040214611,
+    "torso_mean_brightness": 154.52947118148901,
+    "face_critical_overexposure": true,
+    "torso_critical_overexposure": true,
+    "overall_critical_overexposure": true,
+    "face_moderate_overexposure": true,
+    "torso_moderate_overexposure": true,
+    "overall_moderate_overexposure": true,
+    "recovery_difficulty": "hard",
+    "main_overexposure_reason": "face_critical_overexposure",
+    "max_overexposed_ratio": 0.2795916147379217,
+    "recommendation": "review_difficult_recovery"
+  },
+  "test_expectations": {
+    "expected_face_critical": true,
+    "expected_torso_critical": true,
+    "expected_recommendation": "review_recoverable_overexposure",
+    "context": "Sports photography with flash, person well-lit against dark background"
+  },
+  "analysis_notes": {
+    "face_ratio_found": 0.1599642316003875,
+    "torso_ratio_found": 0.2795916147379217,
+    "face_brightness": 100.10959040214611,
+    "torso_brightness": 154.52947118148901,
+    "threshold_analysis": "Face 16% overexposed, Torso 28% overexposed - may need threshold adjustment"
+  }
+}
