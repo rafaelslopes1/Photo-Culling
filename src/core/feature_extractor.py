@@ -43,14 +43,22 @@ try:
 except ImportError:
     try:
         from .exposure_analyzer import ExposureAnalyzer
-        from .person_detector_simplified import SimplifiedPersonDetector as PersonDetector
+        # from .person_detector_simplified import SimplifiedPersonDetector as PersonDetector
         PHASE1_FEATURES_AVAILABLE = True
         PERSON_DETECTOR_TYPE = "simplified"
         logging.warning("Using simplified person detector (MediaPipe not available)")
     except ImportError:
         PHASE1_FEATURES_AVAILABLE = False
-        PERSON_DETECTOR_TYPE = "none"
-        logging.warning("Phase 1 features not available. Check exposure_analyzer and person_detector modules.")
+        logging.warning("Phase 1 features not available")
+
+# Phase 2 advanced person analysis (optional)
+try:
+    from .advanced_person_analyzer import AdvancedPersonAnalyzer
+    PHASE2_FEATURES_AVAILABLE = True
+    logging.info("Phase 2 advanced person analysis available")
+except ImportError:
+    PHASE2_FEATURES_AVAILABLE = False
+    logging.warning("Phase 2 advanced person analysis not available")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -81,6 +89,18 @@ class FeatureExtractor:
             self.exposure_analyzer = None
             self.person_detector = None
             logging.warning("Phase 1 analyzers not available")
+        
+        # Initialize Phase 2 advanced person analyzer
+        if PHASE2_FEATURES_AVAILABLE:
+            try:
+                self.advanced_person_analyzer = AdvancedPersonAnalyzer()
+                logging.info("Phase 2 advanced person analyzer initialized successfully")
+            except Exception as e:
+                logging.error(f"Failed to initialize Phase 2 analyzer: {e}")
+                self.advanced_person_analyzer = None
+        else:
+            self.advanced_person_analyzer = None
+            logging.warning("Phase 2 advanced person analyzer not available")
         
     def init_database(self):
         """Inicializa banco de dados para features"""
@@ -152,6 +172,38 @@ class FeatureExtractor:
                 otsu_threshold REAL,
                 histogram_stats TEXT,
                 is_properly_exposed BOOLEAN,
+                
+                -- Advanced person analysis (Phase 2 - new)
+                -- Person Quality Features
+                person_local_blur_score REAL,
+                person_lighting_quality REAL,
+                person_contrast_score REAL,
+                person_relative_sharpness REAL,
+                person_quality_score REAL,
+                person_quality_level TEXT,
+                
+                -- Cropping Analysis Features
+                has_cropping_issues BOOLEAN,
+                cropping_severity TEXT,
+                cropping_types TEXT,
+                min_edge_distance REAL,
+                framing_quality_score REAL,
+                composition_score REAL,
+                framing_rating TEXT,
+                
+                -- Pose Quality Features
+                posture_quality_score REAL,
+                facial_orientation TEXT,
+                pose_naturalness TEXT,
+                motion_type TEXT,
+                pose_stability_score REAL,
+                body_symmetry_score REAL,
+                pose_rating TEXT,
+                
+                -- Combined Phase 2 Features
+                overall_person_score REAL,
+                overall_person_rating TEXT,
+                advanced_analysis_version TEXT,
                 
                 -- Advanced features
                 visual_complexity REAL,
@@ -232,6 +284,11 @@ class FeatureExtractor:
                 
                 # Add compatibility mapping for person_count
                 features['person_count'] = person_features.get('total_persons', 0)
+                
+                # Phase 2: Advanced person analysis
+                if self.advanced_person_analyzer and person_features.get('total_persons', 0) > 0:
+                    advanced_features = self._extract_advanced_person_features(image, person_features)
+                    features.update(advanced_features)
             
             # Advanced features
             if ADVANCED_FEATURES_AVAILABLE:
@@ -522,6 +579,86 @@ class FeatureExtractor:
             cropping_issues.append('bottom_edge')
         
         return cropping_issues
+    
+    def _extract_advanced_person_features(self, image, person_features):
+        """Extract advanced person analysis features (Phase 2)"""
+        if self.advanced_person_analyzer is None:
+            return {}
+        
+        try:
+            # Get dominant person data from Phase 1
+            dominant_person_bbox_str = person_features.get('dominant_person_bbox', '[]')
+            person_bbox = json.loads(dominant_person_bbox_str)
+            
+            if not person_bbox or len(person_bbox) != 4:
+                # No valid person bbox, return empty features
+                return self._get_empty_advanced_features()
+            
+            person_bbox = tuple(person_bbox)  # Convert to tuple (x, y, w, h)
+            
+            # Get analysis data from Phase 1 for additional context
+            analysis_data_str = person_features.get('person_analysis_data', '{}')
+            dominant_person_data = json.loads(analysis_data_str)
+            
+            # For now, we don't have face_bbox or pose_landmarks from Phase 1
+            # In a full integration, these would be extracted and stored
+            face_bbox = None
+            pose_landmarks = None
+            face_landmarks = None
+            
+            # Perform comprehensive analysis
+            analysis = self.advanced_person_analyzer.analyze_person_comprehensive(
+                person_bbox=person_bbox,
+                face_bbox=face_bbox,
+                pose_landmarks=pose_landmarks,
+                face_landmarks=face_landmarks,
+                full_image=image,
+                dominant_person_data=dominant_person_data
+            )
+            
+            # Extract features for database storage
+            advanced_features = self.advanced_person_analyzer.extract_features_for_database(analysis)
+            
+            return advanced_features
+            
+        except Exception as e:
+            logger.error(f"Erro na extração de features avançadas de pessoa: {e}")
+            return self._get_empty_advanced_features()
+    
+    def _get_empty_advanced_features(self):
+        """Return empty advanced features dictionary"""
+        return {
+            # Person Quality Features
+            'person_local_blur_score': 0.0,
+            'person_lighting_quality': 0.0,
+            'person_contrast_score': 0.0,
+            'person_relative_sharpness': 0.0,
+            'person_quality_score': 0.0,
+            'person_quality_level': 'unknown',
+            
+            # Cropping Analysis Features
+            'has_cropping_issues': False,
+            'cropping_severity': 'none',
+            'cropping_types': json.dumps([]),
+            'min_edge_distance': 0.0,
+            'framing_quality_score': 0.0,
+            'composition_score': 0.0,
+            'framing_rating': 'unknown',
+            
+            # Pose Quality Features
+            'posture_quality_score': 0.0,
+            'facial_orientation': 'unknown',
+            'pose_naturalness': 'unknown',
+            'motion_type': 'unknown',
+            'pose_stability_score': 0.0,
+            'body_symmetry_score': 0.0,
+            'pose_rating': 'unknown',
+            
+            # Combined Features
+            'overall_person_score': 0.0,
+            'overall_person_rating': 'unknown',
+            'advanced_analysis_version': '2.0'
+        }
     
     def _extract_advanced_features(self, image):
         """Extrai características avançadas (se disponível)"""
