@@ -623,8 +623,37 @@ def evaluate_person_analysis_system(test_dataset):
 
 **Próxima Fase: Reconhecimento Facial**
 
-### **⏳ Fase 3: Reconhecimento Facial (Semana 5-6)**
-**Status: Planejada - Próxima Implementação**
+### **🚨 Fase 2.5: URGENTE - Melhorias Críticas (Semana Atual)**
+**Status: Prioritário - Baseado na Análise IMG_0001.JPG**
+
+**Contexto:** Análise da IMG_0001.JPG revelou limitações críticas do sistema atual para fotografia esportiva.
+
+**Implementações Urgentes:**
+- [ ] 🔥 **Análise de Superexposição Localizada**
+  - Detectar overexposure específica no rosto/torso da pessoa
+  - Implementar `face_overexposed_ratio` e `torso_overexposed_ratio`
+  - Thresholds inteligentes para fotografia esportiva
+  - Arquivo: `src/core/overexposure_analyzer.py`
+  
+- [ ] 🔥 **Sistema de Scoring e Ranking Unificado**
+  - Balancear problemas técnicos críticos vs. recuperáveis
+  - Score final ponderado com rotulagem de motivos
+  - Ranking de melhores/piores imagens
+  - Arquivo: `src/core/unified_scoring_system.py`
+  
+- [ ] 🔥 **Ferramentas de Calibração**
+  - Visualizações para análise de thresholds
+  - Métricas de correlação com avaliação manual
+  - Dashboard de análise comparativa
+  - Arquivo: `tools/calibration_dashboard.py`
+
+**Critérios de Sucesso:**
+- Detectar 95%+ dos casos de superexposição crítica no rosto
+- Score final correlaciona >85% com avaliação manual
+- Ranking permite identificar top 10% e bottom 10% das fotos
+
+### **⏳ Fase 3: Reconhecimento Facial (Semana 6-7)**
+**Status: Planejada - Após Fase 2.5**
 
 **Preparação:**
 - [x] ✅ MediaPipe face detection já implementado

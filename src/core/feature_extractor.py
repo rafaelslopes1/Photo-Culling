@@ -60,6 +60,16 @@ except ImportError:
     PHASE2_FEATURES_AVAILABLE = False
     logging.warning("Phase 2 advanced person analysis not available")
 
+# Phase 2.5 critical improvements (optional)
+try:
+    from .overexposure_analyzer import OverexposureAnalyzer
+    from .unified_scoring_system import UnifiedScoringSystem
+    PHASE2_5_FEATURES_AVAILABLE = True
+    logging.info("Phase 2.5 critical improvements available")
+except ImportError:
+    PHASE2_5_FEATURES_AVAILABLE = False
+    logging.warning("Phase 2.5 critical improvements not available")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -101,6 +111,21 @@ class FeatureExtractor:
         else:
             self.advanced_person_analyzer = None
             logging.warning("Phase 2 advanced person analyzer not available")
+        
+        # Initialize Phase 2.5 critical improvements
+        if PHASE2_5_FEATURES_AVAILABLE:
+            try:
+                self.overexposure_analyzer = OverexposureAnalyzer()
+                self.unified_scoring_system = UnifiedScoringSystem()
+                logging.info("Phase 2.5 critical improvements initialized successfully")
+            except Exception as e:
+                logging.error(f"Failed to initialize Phase 2.5 analyzers: {e}")
+                self.overexposure_analyzer = None
+                self.unified_scoring_system = None
+        else:
+            self.overexposure_analyzer = None
+            self.unified_scoring_system = None
+            logging.warning("Phase 2.5 critical improvements not available")
         
     def init_database(self):
         """Inicializa banco de dados para features"""
@@ -289,10 +314,20 @@ class FeatureExtractor:
                 if self.advanced_person_analyzer and person_features.get('total_persons', 0) > 0:
                     advanced_features = self._extract_advanced_person_features(image, person_features)
                     features.update(advanced_features)
+                
+                # Phase 2.5: Overexposure analysis for person regions
+                if self.overexposure_analyzer and person_features.get('total_persons', 0) > 0:
+                    overexposure_features = self._extract_overexposure_features(image, person_features)
+                    features.update(overexposure_features)
             
             # Advanced features
             if ADVANCED_FEATURES_AVAILABLE:
                 features.update(self._extract_advanced_features(image))
+            
+            # Phase 2.5: Unified scoring system (must be after all other features)
+            if self.unified_scoring_system:
+                scoring_features = self._extract_unified_scoring_features(features)
+                features.update(scoring_features)
             
             # Hash for uniqueness
             features['uniqueness_hash'] = self._calculate_image_hash(image)
@@ -906,8 +941,167 @@ class FeatureExtractor:
         
         logger.info(f"Retrieved features for {len(features_df)} labeled images")
         return features_df
+    
+    def _extract_overexposure_features(self, image, person_features):
+        """
+        Extract overexposure analysis features for person regions
+        
+        Args:
+            image: OpenCV image
+            person_features: Features from person detection including bounding boxes
+            
+        Returns:
+            dict: Overexposure analysis features
+        """
+        features = {}
+        
+        try:
+            # Get person bounding boxes from person features
+            # Try different possible keys for person bounding boxes
+            person_bboxes = person_features.get('person_bboxes', [])
+            if not person_bboxes:
+                # Try to get from dominant_person_bbox
+                dominant_bbox = person_features.get('dominant_person_bbox', None)
+                if dominant_bbox:
+                    # Convert string representation to list if needed
+                    if isinstance(dominant_bbox, str):
+                        try:
+                            import ast
+                            dominant_bbox = ast.literal_eval(dominant_bbox)
+                        except:
+                            logger.warning(f"Could not parse dominant_person_bbox: {dominant_bbox}")
+                            dominant_bbox = None
+                    
+                    if dominant_bbox:
+                        person_bboxes = [dominant_bbox]
+            
+            face_landmarks = person_features.get('face_landmarks', None)
+            
+            # Debug logging
+            logger.info(f"Overexposure analysis: person_bboxes={person_bboxes}, face_landmarks type={type(face_landmarks)}")
+            
+            if not person_bboxes:
+                logger.warning("No person bounding boxes found for overexposure analysis")
+                return self._get_default_overexposure_features()
+            
+            # Analyze overexposure for the first/primary person
+            primary_bbox = person_bboxes[0] if person_bboxes else None
+            
+            if primary_bbox:
+                # Convert bbox format if needed (depends on person detector output format)
+                if len(primary_bbox) == 4:
+                    x, y, w, h = primary_bbox
+                    bbox_tuple = (int(x), int(y), int(w), int(h))
+                    
+                    logger.info(f"Calling overexposure analyzer with bbox: {bbox_tuple}")
+                    
+                    # Call overexposure analyzer
+                    if self.overexposure_analyzer:
+                        overexposure_result = self.overexposure_analyzer.analyze_person_overexposure(
+                            person_bbox=bbox_tuple,
+                            face_landmarks=face_landmarks,
+                            full_image=image
+                        )
+                        logger.info(f"Overexposure result: {overexposure_result}")
+                    else:
+                        overexposure_result = {}
+                
+                    # Extract features from result
+                    features.update({
+                        'overexposure_is_critical': overexposure_result.get('overall_critical_overexposure', False),
+                        'overexposure_face_critical_ratio': overexposure_result.get('face_overexposed_ratio', 0.0),
+                        'overexposure_face_moderate_ratio': overexposure_result.get('face_overexposed_ratio', 0.0),  # Same value, different interpretation
+                        'overexposure_torso_critical_ratio': overexposure_result.get('torso_overexposed_ratio', 0.0),
+                        'overexposure_torso_moderate_ratio': overexposure_result.get('torso_overexposed_ratio', 0.0),  # Same value, different interpretation
+                        'overexposure_recovery_difficulty': overexposure_result.get('recovery_difficulty', 'unknown'),
+                        'overexposure_overall_critical_ratio': overexposure_result.get('max_overexposed_ratio', 0.0),
+                        'overexposure_main_reason': overexposure_result.get('main_overexposure_reason', 'unknown'),
+                        'overexposure_recommendation': overexposure_result.get('recommendation', 'analyze_manually')
+                    })
+                else:
+                    features = self._get_default_overexposure_features()
+            else:
+                features = self._get_default_overexposure_features()
+                
+        except Exception as e:
+            logger.error(f"Erro na análise de superexposição: {e}")
+            features = self._get_default_overexposure_features()
+            
+        return features
+    
+    def _extract_unified_scoring_features(self, all_features):
+        """
+        Extract unified scoring system features
+        
+        Args:
+            all_features: Dictionary with all previously extracted features
+            
+        Returns:
+            dict: Unified scoring system results
+        """
+        features = {}
+        
+        try:
+            # Call unified scoring system
+            if self.unified_scoring_system:
+                scoring_result = self.unified_scoring_system.calculate_final_score(all_features)
+            else:
+                scoring_result = {}
+            
+            # Extract features from result
+            features.update({
+                'unified_final_score': scoring_result.get('final_score', 0.0),
+                'unified_rating': scoring_result.get('rating', 'unknown'),
+                'unified_is_rejected': scoring_result.get('is_rejected', False),
+                'unified_ranking_priority': scoring_result.get('ranking_priority', 0),
+                'unified_technical_score': scoring_result.get('score_breakdown', {}).get('technical', 0.0),
+                'unified_person_score': scoring_result.get('score_breakdown', {}).get('person', 0.0),
+                'unified_composition_score': scoring_result.get('score_breakdown', {}).get('composition', 0.0),
+                'unified_context_bonus': scoring_result.get('score_breakdown', {}).get('context_bonus', 0.0),
+                'unified_rejection_reasons': str(scoring_result.get('rejection_reasons', [])),
+                'unified_main_issues': str([issue.get('type', 'unknown') for issue in scoring_result.get('issues', [])]),
+                'unified_recommendation': scoring_result.get('recommendation', 'analyze_manually'),
+                'unified_is_recoverable': scoring_result.get('is_recoverable', True)
+            })
+            
+        except Exception as e:
+            logger.error(f"Erro no sistema de score unificado: {e}")
+            features = self._get_default_scoring_features()
+            
+        return features
+    
+    def _get_default_overexposure_features(self):
+        """Default overexposure features when analysis is not available"""
+        return {
+            'overexposure_is_critical': False,
+            'overexposure_face_critical_ratio': 0.0,
+            'overexposure_face_moderate_ratio': 0.0,
+            'overexposure_torso_critical_ratio': 0.0,
+            'overexposure_torso_moderate_ratio': 0.0,
+            'overexposure_recovery_difficulty': 'unknown',
+            'overexposure_overall_critical_ratio': 0.0,
+            'overexposure_main_reason': 'analysis_not_available',
+            'overexposure_recommendation': 'manual_inspection'
+        }
+    
+    def _get_default_scoring_features(self):
+        """Default scoring features when analysis is not available"""
+        return {
+            'unified_final_score': 50.0,
+            'unified_rating': 'unknown',
+            'unified_is_rejected': False,
+            'unified_ranking_priority': 50,
+            'unified_technical_score': 50.0,
+            'unified_person_score': 50.0,
+            'unified_composition_score': 50.0,
+            'unified_context_bonus': 0.0,
+            'unified_rejection_reasons': '[]',
+            'unified_main_issues': '[]',
+            'unified_recommendation': 'system_not_available',
+            'unified_is_recoverable': True
+        }
 
-# Convenience functions
+
 def extract_features_from_folder(folder_path, output_db=None, max_workers=None):
     """
     Extrai features de todas as imagens em uma pasta
