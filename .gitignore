@@ -20,19 +20,34 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.coverage
+.pytest_cache/
+htmlcov/
 
 # Virtual Environment
 .venv/
 venv/
 ENV/
 env/
+.env
 
-# IDE
+# IDE and Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.spyderproject
+.spyproject
+.sublime-project
+.sublime-workspace
 
 # OS
 .DS_Store
@@ -42,6 +57,7 @@ env/
 .Trashes
 ehthumbs.db
 Thumbs.db
+Desktop.ini
 
 # Project specific
 # Images (large files)
@@ -51,27 +67,109 @@ data/input/*.png
 data/input/*.JPG
 data/input/*.JPEG
 data/input/*.PNG
+data/input/*.gif
+data/input/*.GIF
+data/input/*.bmp
+data/input/*.BMP
+data/input/*.tiff
+data/input/*.TIFF
+data/input/*.webp
+data/input/*.WEBP
+
+# Video files (if applicable)
+data/input/*.mp4
+data/input/*.MP4
+data/input/*.avi
+data/input/*.AVI
+data/input/*.mov
+data/input/*.MOV
 
 # Database files
 data/features/*.db
+data/features/*.sqlite
+data/features/*.sqlite3
 data/labels/*.db
+data/labels/*.sqlite
+data/labels/*.sqlite3
 data/quality/*.db
+data/quality/*.sqlite
+data/quality/*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*~
 
 # Temporary files
 *.tmp
 *.temp
 *.log
+*.swp
+*.swo
 
 # Large model files
 data/models/*.pkl
 data/models/*.joblib
 data/models/*.h5
+data/models/*.pt
+data/models/*.pth
+data/models/*.onnx
+data/models/*.tflite
+data/models/*.pb
+data/models/*.weights
+data/models/*.model
 
-# Analysis results
+# Analysis and report files
 CLEANUP_ANALYSIS.json
+CLEANUP_EXECUTION_REPORT.json
 data/quality/*.json
 data/quality/*.csv
+data/quality/*.txt
+data/quality/*.xlsx
+data/quality/*.xls
+data/quality/reports/
+data/quality/analysis/
+data/quality/temp/
+
+# Face recognition specific
+data/features/face_encodings/
+data/features/embeddings/
+*.face
 
 # Configuration with sensitive data
 config_local.json
 .env
+.env.local
+.env.production
+.env.staging
+secrets.json
+*.key
+*.pem
+*.crt
+*.cert
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# MacOS specific
+.AppleDouble
+.LSOverride
+Icon?
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux specific
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# Performance and profiling
+*.prof
+*.lprof
+.profile
