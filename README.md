@@ -33,11 +33,11 @@
 # Processar imagens com sistema otimizado
 python main.py --classify --input-dir data/input
 
-# Ver demonstração do sistema integrado
-python demo_integrated_system.py
+# Análise de qualidade detalhada
+python tools/quality_analyzer.py --analyze
 
-# Teste completo de integração
-python final_integration_test.py
+# Manutenção automática do projeto
+python tools/project_maintenance.py
 ```
 
 ### Interface Web e Treinamento
@@ -75,7 +75,15 @@ Acesse: http://localhost:5001
 
 ## 📖 Documentação Completa
 
-Para documentação detalhada, consulte: [`docs/README.md`](docs/README.md)
+### 📚 Guias Principais
+- [`docs/README.md`](docs/README.md) - Documentação técnica completa
+- [`ANALYSIS_TOOLS_GUIDE.md`](ANALYSIS_TOOLS_GUIDE.md) - **🆕 Guia de ferramentas de análise e scores**
+- [`tools/README.md`](tools/README.md) - Ferramentas de manutenção e utilitários
+
+### 📋 Guias Específicos
+- [`QUICKSTART.md`](QUICKSTART.md) - Guia de início rápido
+- [`CHANGELOG.md`](CHANGELOG.md) - Histórico de mudanças  
+- [`docs/SMART_SELECTION.md`](docs/SMART_SELECTION.md) - Como funciona a seleção inteligente
 
 ## 🏗️ Estrutura do Projeto
 
@@ -117,10 +125,36 @@ Exemplo de log simplificado:
 - **Precisão típica**: 85-95% após 50+ exemplos por classe
 - **Redução de tempo**: 70% comparado à seleção manual
 
-## 🛠️ Ferramentas Incluídas
+## 🛠️ Ferramentas de Manutenção e Análise
 
-- `tools/health_check.py` - Verificação de saúde do sistema
-- `tools/ai_prediction_tester.py` - Teste de predições de IA
+### 🔧 Manutenção Automatizada
+- `tools/project_maintenance.py` - Monitoramento e manutenção automática do projeto
+- `tools/unified_cleanup_tool.py` - Ferramenta unificada de análise e limpeza
+- `tools/data_quality_cleanup.py` - Limpeza especializada de dados de qualidade
+
+### 📊 Análise e Qualidade
+- `tools/quality_analyzer.py` - Análise detalhada de qualidade de imagens com scores
+- `tools/analysis_tools.py` - Ferramentas estatísticas e métricas avançadas
+- `tools/visualization_tools.py` - Visualizações e gráficos de análise
+
+### 🤖 Testes de IA
+- `tools/ai_prediction_tester.py` - Validação de predições e modelos de IA
+- `tools/face_recognition_test.py` - Testes específicos de reconhecimento facial
+
+### 🚀 Uso das Ferramentas
+```bash
+# Manutenção diária
+python tools/project_maintenance.py
+
+# Análise de qualidade com scores detalhados
+python tools/quality_analyzer.py --analyze
+
+# Limpeza completa do projeto
+python tools/unified_cleanup_tool.py
+
+# Análise estatística avançada
+python tools/analysis_tools.py
+```
 
 ## 📝 Guias Rápidos
 
@@ -168,11 +202,11 @@ O sistema agora inclui **detecção avançada de desfoque** com validação supe
 # Classificação com blur detection otimizado
 python main.py --classify --input-dir data/input
 
-# Demonstração interativa
-python demo_integrated_system.py
+# Análise de qualidade com ferramentas atualizadas
+python tools/quality_analyzer.py --analyze
 
-# Teste completo do pipeline
-python final_integration_test.py
+# Manutenção e limpeza do projeto
+python tools/project_maintenance.py --clean
 ```
 
 ---
