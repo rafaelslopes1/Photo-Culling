@@ -8,8 +8,8 @@
 tools/
 ├── 🔧 core/                  # Ferramentas essenciais de produção
 ├── 📊 analysis/              # Análise e visualização
-├── 🛠️ dev/                   # Desenvolvimento e manutenção
-└── � README.md              # Esta documentação
+├── 🧹 unified_cleanup_tool.py # Ferramenta de limpeza e manutenção
+└── 📖 README.md              # Esta documentação
 ```
 
 ## � **Core Tools** (Produção)
@@ -45,6 +45,71 @@ python tools/core/final_success_report.py
 - 🎯 Métricas de sucesso validadas
 
 ## 📊 **Analysis Tools** (Análise)
+
+### `production_showcase.py`
+**Teste de produção completo com 10 imagens**
+```bash
+python tools/analysis/production_showcase.py
+```
+**Funcionalidades:**
+- 🎯 Seleção automática de 10 imagens representativas
+- 📊 Análise completa com 95+ features por imagem
+- 💾 Geração de JSON com todos os dados técnicos
+- 🎨 Criação de visualizações anotadas (bounding boxes, landmarks)
+- 📄 Relatório em linguagem natural sobre cada imagem
+- 📈 Estatísticas agregadas do conjunto
+
+**Outputs gerados:**
+- `production_showcase_results_YYYYMMDD_HHMMSS.json`
+- `production_showcase_report_YYYYMMDD_HHMMSS.md`
+- `annotated_*.JPG` (imagens com anotações visuais)
+
+### `view_production_results.py`
+**Visualizador de resultados de produção**
+```bash
+python tools/analysis/view_production_results.py
+```
+**Funcionalidades:**
+- 📁 Carrega automaticamente resultados mais recentes
+- 📊 Exibe estatísticas consolidadas
+- 📋 Lista todos os arquivos gerados
+- 🏆 Mostra resumo das classificações
+- 🔍 Interface para navegar pelos resultados
+
+### `expert_analysis_processor.py`
+**Processador de análise de especialista**
+```bash
+python tools/analysis/expert_analysis_processor.py
+```
+**Funcionalidades:**
+- 📝 Parse do formulário de análise preenchido
+- ⚖️ Comparação entre avaliação manual vs automática
+- 📈 Cálculo de taxa de concordância
+- 🎯 Identificação de discrepâncias significativas
+- 💡 Geração de recomendações de calibração
+- 📄 Relatório comparativo detalhado
+
+**Requer:**
+- Formulário `PHOTOGRAPHER_EXPERT_ANALYSIS_FORM.md` preenchido
+- Resultados do `production_showcase.py`
+
+### `system_calibrator.py`
+**Calibrador automático do sistema**
+```bash
+python tools/analysis/system_calibrator.py
+```
+**Funcionalidades:**
+- 💾 Backup automático da configuração atual
+- 🔧 Ajuste de thresholds de blur detection
+- ⚖️ Rebalanceamento de pesos de scoring
+- 📊 Modificação de limites de classificação
+- 📄 Geração de relatório de ajustes
+- 🔄 Sistema de restauração de backup
+
+**Ajustes automáticos:**
+- Thresholds de nitidez baseados em concordância
+- Pesos de componentes baseados em feedback
+- Limites de classificação para reduzir discrepâncias
 
 ### `visual_analysis_generator.py`
 **Geração de imagens anotadas**
@@ -206,7 +271,6 @@ PHOTO_CULLING_DEBUG=1 python tools/analysis/visual_analysis_generator.py
 ├── visualization_tools.py       # 📊 Visualizações
 ├── ai_prediction_tester.py      # 🤖 Testes de IA
 └── face_recognition_test.py     # 👤 Testes de reconhecimento
-```
 
 ## 💡 Dicas de Uso
 

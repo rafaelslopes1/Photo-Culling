@@ -23,6 +23,7 @@ sys.path.insert(0, str(project_root))
 
 # Import optimized blur detection
 from .image_quality_analyzer import ImageQualityAnalyzer
+from .person_blur_analyzer import PersonBlurAnalyzer
 from data.quality.blur_config import get_threshold_by_strategy, DEFAULT_PRACTICAL_THRESHOLD
 
 # Configure logging

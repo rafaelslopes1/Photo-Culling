@@ -147,6 +147,42 @@
       "enabled": false,
       "model_path": "",
       "config_path": ""
+    },
+    "person_focused_analysis": {
+      "enabled": true,
+      "version": "1.0",
+      "person_blur_analysis": {
+        "enabled": true,
+        "face_weight": 0.6,
+        "body_weight": 0.4,
+        "thresholds": {
+          "excellent": 80,
+          "good": 50,
+          "fair": 30,
+          "poor": 15,
+          "reject": 0
+        }
+      },
+      "composition_analysis": {
+        "enabled": true,
+        "detect_cropped_persons": true,
+        "centralization_threshold": 0.3,
+        "minimum_person_size_ratio": 0.1
+      }
+    },
+    "enhanced_scoring_weights": {
+      "person_sharpness_weight": 0.5,
+      "global_sharpness_weight": 0.2,
+      "exposure_weight": 0.15,
+      "composition_weight": 0.1,
+      "person_detection_weight": 0.05
+    },
+    "enhanced_quality_thresholds": {
+      "excellent_threshold": 0.90,
+      "good_threshold": 0.70,
+      "fair_threshold": 0.45,
+      "poor_threshold": 0.25,
+      "person_blur_minimum": 50
     }
   },
   "output_folders": {
