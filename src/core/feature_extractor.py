@@ -697,10 +697,14 @@ class FeatureExtractor:
             dominant_person_data = json.loads(analysis_data_str)
             
             # For now, we don't have face_bbox or pose_landmarks from Phase 1
-            # In a full integration, these would be extracted and stored
+            # Extract landmarks from dominant person detection
             face_bbox = None
-            pose_landmarks = None
-            face_landmarks = None
+            pose_landmarks = dominant_person_data.get('pose_landmarks') if dominant_person_data else None
+            face_landmarks = None  # Face landmarks would need face detection integration
+            
+            # Also try to get landmarks from stored person features
+            if not pose_landmarks and 'landmarks' in person_features:
+                pose_landmarks = person_features.get('landmarks')
             
             # Perform comprehensive analysis
             analysis = self.advanced_person_analyzer.analyze_person_comprehensive(

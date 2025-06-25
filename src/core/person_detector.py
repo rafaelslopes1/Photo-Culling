@@ -139,19 +139,25 @@ class PersonDetector:
                             )
                             persons.append(person)
             
-            # Also try global pose detection for cases where faces aren't detected
+            # SEMPRE tentar detecção global de pose (correção implementada)
+            # Isso garante que pessoas sem faces detectáveis também sejam encontradas
             pose_results = self.pose.process(rgb_image)
-            if pose_results.pose_landmarks and len(persons) == 0:
-                # Only use global pose if no face-based persons were found
+            if pose_results.pose_landmarks:
                 person_bbox = self._extract_person_bbox_from_pose(
                     pose_results.pose_landmarks, image_width, image_height
                 )
                 if person_bbox:
-                    person = self._create_person_detection(
-                        0, person_bbox, pose_results.pose_landmarks, 
-                        image, image_width, image_height
-                    )
-                    persons.append(person)
+                    # Verificar se esta pessoa já foi detectada via face
+                    is_duplicate = self._is_duplicate_person(person_bbox, persons)
+                    
+                    if not is_duplicate:
+                        # Criar novo ID para pessoa detectada via pose
+                        pose_person_id = len(persons)
+                        person = self._create_person_detection(
+                            pose_person_id, person_bbox, pose_results.pose_landmarks, 
+                            image, image_width, image_height
+                        )
+                        persons.append(person)
             
             # Identify dominant person
             dominant_person = None
@@ -433,6 +439,54 @@ class PersonDetector:
         except Exception as e:
             logger.debug(f"Não foi possível extrair pose para região: {e}")
             return None
+
+    def _is_duplicate_person(self, new_bbox: Tuple[int, int, int, int], 
+                           existing_persons: List[PersonDetection], 
+                           overlap_threshold: float = 0.3) -> bool:
+        """
+        Check if a person bbox significantly overlaps with existing persons
+        
+        Args:
+            new_bbox: Bounding box of new person (x, y, w, h)
+            existing_persons: List of already detected persons
+            overlap_threshold: Minimum overlap ratio to consider duplicate
+            
+        Returns:
+            True if this person is likely a duplicate
+        """
+        try:
+            if not existing_persons:
+                return False
+            
+            x1, y1, w1, h1 = new_bbox
+            
+            for person in existing_persons:
+                x2, y2, w2, h2 = person.bounding_box
+                
+                # Calculate intersection
+                x_left = max(x1, x2)
+                y_top = max(y1, y2)
+                x_right = min(x1 + w1, x2 + w2)
+                y_bottom = min(y1 + h1, y2 + h2)
+                
+                if x_right <= x_left or y_bottom <= y_top:
+                    continue  # No intersection
+                
+                intersection_area = (x_right - x_left) * (y_bottom - y_top)
+                bbox1_area = w1 * h1
+                bbox2_area = w2 * h2
+                union_area = bbox1_area + bbox2_area - intersection_area
+                
+                if union_area > 0:
+                    overlap_ratio = intersection_area / union_area
+                    if overlap_ratio > overlap_threshold:
+                        return True  # Found significant overlap
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Erro ao verificar pessoa duplicada: {e}")
+            return False
 
 
 def detect_persons_in_image(image_path: str) -> Optional[Dict]:

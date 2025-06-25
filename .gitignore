@@ -20,34 +20,22 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-*.pyc
-*.pyo
-*.pyd
-__pycache__
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
-.coverage
-.pytest_cache/
-htmlcov/
 
-# Virtual Environment
-.venv/
+# Virtual environments
+.env
+.venv
+env/
 venv/
 ENV/
-env/
-.env
+env.bak/
+venv.bak/
 
-# IDE and Editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.spyderproject
-.spyproject
-.sublime-project
-.sublime-workspace
 
 # OS
 .DS_Store
@@ -57,119 +45,80 @@ env/
 .Trashes
 ehthumbs.db
 Thumbs.db
-Desktop.ini
 
-# Project specific
-# Images (large files)
-data/input/*.jpg
-data/input/*.jpeg
-data/input/*.png
-data/input/*.JPG
-data/input/*.JPEG
-data/input/*.PNG
-data/input/*.gif
-data/input/*.GIF
-data/input/*.bmp
-data/input/*.BMP
-data/input/*.tiff
-data/input/*.TIFF
-data/input/*.webp
-data/input/*.WEBP
+# Project specific - NEVER commit images or test data
+data/input/*
+!data/input/.gitkeep
 
-# Video files (if applicable)
-data/input/*.mp4
-data/input/*.MP4
-data/input/*.avi
-data/input/*.AVI
-data/input/*.mov
-data/input/*.MOV
+# ANALYSIS RESULTS - Never commit any analysis outputs
+data/analysis_results/
+data/features/
+data/labels/
+data/models/
+data/quality/
 
 # Database files
-data/features/*.db
-data/features/*.sqlite
-data/features/*.sqlite3
-data/labels/*.db
-data/labels/*.sqlite
-data/labels/*.sqlite3
-data/quality/*.db
-data/quality/*.sqlite
-data/quality/*.sqlite3
+*.db
+*.sqlite
+*.sqlite3
 
-# Backup files
-*.bak
-*.backup
-*~
+# Images and media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.webp
+*.svg
 
-# Temporary files
+# Model files
+*.joblib
+*.pkl
+*.model
+*.weights
+*.h5
+
+# Test and debug files
+*test*.json
+*debug*.json
+*analysis*.json
+*result*.json
+*summary*.json
+*report*.json
+*integration*.json
+*detection*.json
+*quick_fix*.json
+*visual*.json
+
+# Temporary analysis files
+data/analysis_results/temp/
+data/analysis_results/*/temp_*
 *.tmp
 *.temp
 *.log
-*.swp
-*.swo
 
-# Large model files
-data/models/*.pkl
-data/models/*.joblib
-data/models/*.h5
-data/models/*.pt
-data/models/*.pth
-data/models/*.onnx
-data/models/*.tflite
-data/models/*.pb
-data/models/*.weights
-data/models/*.model
+# Any numbered or timestamped files
+*_[0-9]*.jpg
+*_[0-9]*.json
+integration_test_*.json
+analysis_*.jpg
 
-# Analysis and report files
-CLEANUP_ANALYSIS.json
-CLEANUP_EXECUTION_REPORT.json
-data/quality/*.json
-data/quality/*.csv
-data/quality/*.txt
-data/quality/*.xlsx
-data/quality/*.xls
-data/quality/reports/
-data/quality/analysis/
-data/quality/temp/
+# Models and large files
+*.pkl
+*.model
+*.weights
+*.h5
 
-# Face recognition specific
-data/features/face_encodings/
-data/features/embeddings/
-*.face
-
-# Configuration with sensitive data
-config_local.json
-.env
-.env.local
-.env.production
-.env.staging
-secrets.json
-*.key
-*.pem
-*.crt
-*.cert
-
-# Jupyter Notebook
+# Jupyter
 .ipynb_checkpoints/
 *.ipynb
 
-# MacOS specific
-.AppleDouble
-.LSOverride
-Icon?
-
-# Windows specific
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# Linux specific
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-
-# Performance and profiling
-*.prof
-*.lprof
-.profile
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
