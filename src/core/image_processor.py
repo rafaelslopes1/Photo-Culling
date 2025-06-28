@@ -22,9 +22,10 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import optimized blur detection
-from .image_quality_analyzer import ImageQualityAnalyzer
-from .person_blur_analyzer import PersonBlurAnalyzer
+from src.core.image_quality_analyzer import ImageQualityAnalyzer
+from src.core.person_blur_analyzer import PersonBlurAnalyzer
 from data.quality.blur_config import get_threshold_by_strategy, DEFAULT_PRACTICAL_THRESHOLD
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -62,25 +63,37 @@ class ImageProcessor:
         
     def extract_features(self, input_dir):
         """Extract features from images in input directory"""
-        from .feature_extractor import FeatureExtractor
+        from src.core.feature_extractor import FeatureExtractor, extract_features_from_folder
         
         extractor = FeatureExtractor()
-        return extractor.extract_from_directory(input_dir)
+        return extract_features_from_folder(input_dir, '3')
     
     def train_model(self):
         """Train AI model with labeled data"""
-        from .ai_classifier import AIClassifier
+        from src.core.ai_classifier import AIClassifier
         
         classifier = AIClassifier()
-        return classifier.train_model()
+        return classifier.train_models()
     
     def classify_images(self, input_dir):
         """Classify images using trained model"""
-        from .ai_classifier import AIClassifier
-        
+        from src.core.ai_classifier import AIClassifier
+
         classifier = AIClassifier()
-        return classifier.predict_directory(input_dir)
-        
+        if not classifier.load_best_model():
+            logger.error("Não foi possível carregar o modelo de IA. Execute o treinamento primeiro.")
+            return []
+
+        image_paths = self._find_images(input_dir)
+        if not image_paths:
+            logger.warning(f"Nenhuma imagem encontrada em {input_dir} para classificação.")
+            return []
+
+        logger.info(f"Classificando {len(image_paths)} imagens...")
+        predictions = classifier.predict_batch(image_paths)
+
+        return [{'filename': os.path.basename(path), 'prediction': pred} for path, pred in zip(image_paths, predictions)]
+
     def _load_config(self, config_path):
         """Carrega configurações do arquivo JSON"""
         default_config = {
@@ -439,7 +452,7 @@ def process_images_with_ai(input_folder, output_folder, ai_classifier=None):
     # Load AI classifier if not provided
     if ai_classifier is None:
         try:
-            from .ai_classifier import AIClassifier
+            from src.core.ai_classifier import AIClassifier
             ai_classifier = AIClassifier()
             ai_classifier.load_best_model()
         except:
