@@ -122,3 +122,12 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+
+# Cleanup and temporary files
+*_CLEANUP_*.md
+*_REPORT_*.json
+*_FINAL_*.md
+*_SUCCESS_*.md
+cleanup_*.py
+temp_*.py
+debug_*.log
