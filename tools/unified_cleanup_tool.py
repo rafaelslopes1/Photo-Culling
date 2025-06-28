@@ -34,7 +34,8 @@ class UnifiedCleanupTool:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hash_md5.update(chunk)
             return hash_md5.hexdigest()
-        except:
+        except (IOError, OSError) as e:
+            print(f"Aviso: Não foi possível calcular o hash para {file_path}: {e}")
             return None
     
     def analyze_project_structure(self) -> Dict:
@@ -77,8 +78,8 @@ class UnifiedCleanupTool:
                             'path': str(file_path),
                             'size_mb': round(size / (1024 * 1024), 2)
                         })
-                except:
-                    pass
+                except (IOError, OSError) as e:
+                    print(f"Aviso: Não foi possível ler o tamanho do arquivo {file_path}: {e}")
         
         # Find temp files and cache
         temp_patterns = ['*.tmp', '*.temp', '*~', '*.bak', '*.orig', '*.log']
@@ -103,8 +104,8 @@ class UnifiedCleanupTool:
                 try:
                     if not any(dir_path.iterdir()):
                         analysis["empty_dirs"].append(str(dir_path))
-                except:
-                    pass
+                except (IOError, OSError) as e:
+                    print(f"Aviso: Não foi possível acessar o diretório {dir_path}: {e}")
         
         # Find redundant reports
         report_patterns = ["*CLEANUP*", "*REPORT*", "*ANALYSIS*", "*SUMMARY*"]
@@ -192,7 +193,7 @@ class UnifiedCleanupTool:
                 if not dry_run:
                     Path(temp_file).unlink()
                 cleanup_results["removed_files"].append(temp_file)
-                print(f"   ✅ {Path(temp_file).name}")
+                print(f"   - Removido arquivo: {temp_file}")
             except Exception as e:
                 cleanup_results["errors"].append(f"Erro ao remover {temp_file}: {e}")
         
@@ -202,7 +203,7 @@ class UnifiedCleanupTool:
                 if not dry_run:
                     shutil.rmtree(cache_dir)
                 cleanup_results["removed_dirs"].append(cache_dir)
-                print(f"   ✅ {Path(cache_dir).name}/")
+                print(f"   - Removido diretório: {cache_dir}")
             except Exception as e:
                 cleanup_results["errors"].append(f"Erro ao remover {cache_dir}: {e}")
         
@@ -212,7 +213,7 @@ class UnifiedCleanupTool:
                 if not dry_run:
                     Path(empty_dir).rmdir()
                 cleanup_results["removed_dirs"].append(empty_dir)
-                print(f"   ✅ {Path(empty_dir).name}/")
+                print(f"   - Removido diretório: {empty_dir}")
             except Exception as e:
                 cleanup_results["errors"].append(f"Erro ao remover {empty_dir}: {e}")
         
@@ -229,7 +230,7 @@ class UnifiedCleanupTool:
                         try:
                             Path(report).unlink()
                             cleanup_results["removed_files"].append(report)
-                            print(f"   ✅ {Path(report).name}")
+                            print(f"   - Removido relatório: {report}")
                         except Exception as e:
                             cleanup_results["errors"].append(f"Erro ao remover {report}: {e}")
         
