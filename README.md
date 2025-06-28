@@ -1,23 +1,23 @@
 # 📸 Photo Culling System v2.0
 
-> **Sistema inteligente de classificação e curadoria de fotos com detecção otimizada de pessoas e análise de qualidade**
+> **Sistema inteligente de avaliação e curadoria de fotos com interface web para coleta de dados especialistas e futura IA**
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.x-green.svg)](https://opencv.org)
-[![MediaPipe](https://img.shields.io/badge/MediaPipe-Latest-orange.svg)](https://mediapipe.dev)
+[![Flask](https://img.shields.io/badge/Flask-2.x-green.svg)](https://flask.palletsprojects.com)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.x-blue.svg)](https://opencv.org)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](#)
 
 ## 🎯 **Visão Geral**
 
-Sistema automatizado que combina **detecção inteligente de pessoas**, **análise de qualidade de imagem** e **interface web** para curadoria eficiente de coleções fotográficas. Otimizado para Mac M3 com suporte a GPU.
+Sistema completo para **avaliação manual especializada** de fotografias com interface web moderna. Coleta dados estruturados para futuro treinamento de modelos de IA para classificação automática de qualidade fotográfica.
 
 ### ✨ **Características Principais**
 
-- 🎯 **Detecção Robusta de Pessoas**: MediaPipe + estimativas faciais com 100% taxa de sucesso
-- 📊 **Análise de Qualidade**: Métricas de nitidez, exposição e composição
-- 🧠 **Reconhecimento Facial**: Identificação e agrupamento de pessoas
-- 🖼️ **Interface Web**: Rotulagem manual e revisão assistida
-- ⚡ **Performance Otimizada**: Processamento GPU-acelerado em lotes
+- 🖥️ **Interface Web Moderna**: Design elegante com tema escuro e controles intuitivos
+- 📊 **Avaliação Estruturada**: Critérios técnicos e contextuais detalhados
+- 📈 **Dashboard Analítico**: Estatísticas e insights em tempo real
+- 🤖 **Preparação para IA**: Dados otimizados para machine learning
+- ⚡ **Performance Otimizada**: Sistema responsivo e rápido
 - 📈 **Relatórios Detalhados**: Análises visuais e estatísticas completas
 
 ## 🚀 **Quick Start**
