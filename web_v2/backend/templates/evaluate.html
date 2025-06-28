@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interface de Avaliação - Photo Culling Expert</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .evaluation-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .top-bar {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .image-panel {
+            flex: 0 0 70%;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .evaluation-panel {
+            flex: 0 0 30%;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 3px solid #667eea;
+        }
+        
+        .image-container {
+            max-width: 100%;
+            max-height: 100%;
+            position: relative;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 5px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .image-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+        }
+        
+        .rating-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .star-rating {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .star {
+            font-size: 1.5rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .star.active,
+        .star:hover {
+            color: #ffc107;
+        }
+        
+        .decision-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .decision-btn {
+            border: 2px solid #dee2e6;
+            background: white;
+            color: #6c757d;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .decision-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .hotkeys-help {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+        
+        .progress-indicator {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .confidence-slider {
+            margin: 15px 0;
+        }
+        
+        .submit-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+        }
+        
+        .navigation-buttons {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .nav-prev {
+            left: 20px;
+        }
+        
+        .nav-next {
+            right: 20px;
+        }
+        
+        .navigation-buttons:hover {
+            background: rgba(0,0,0,0.9);
+        }
+        
+        .technical-preview {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="evaluation-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-camera"></i> Photo Culling Expert
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <button class="btn btn-outline-light btn-sm me-2" onclick="previousImage()">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </button>
+                            <span class="mx-3">
+                                <span id="current-index">1</span> / <span id="total-images">{{ images|length }}</span>
+                            </span>
+                            <button class="btn btn-outline-light btn-sm ms-2" onclick="nextImage()">
+                                Próxima <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <span class="badge bg-light text-dark">{{ evaluator_id }}</span>
+                        <a href="{{ url_for('analytics') }}" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="fas fa-chart-bar"></i> Analytics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Image Panel -->
+            <div class="image-panel">
+                <div class="image-container">
+                    <img id="current-image" src="" alt="Imagem para avaliação">
+                    <div class="image-controls">
+                        <button class="btn btn-outline-light btn-sm" onclick="zoomImage('fit')">Ajustar</button>
+                        <button class="btn btn-outline-light btn-sm" onclick="zoomImage('100')">100%</button>
+                        <button class="btn btn-outline-light btn-sm" onclick="zoomImage('actual')">Atual</button>
+                        <span class="ms-3" id="image-filename">filename.jpg</span>
+                    </div>
+                </div>
+                
+                <!-- Navigation Buttons -->
+                <button class="navigation-buttons nav-prev" onclick="previousImage()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="navigation-buttons nav-next" onclick="nextImage()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Evaluation Panel -->
+            <div class="evaluation-panel">
+                <!-- Progress -->
+                <div class="progress-indicator">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Progresso Geral</small>
+                        <small class="text-muted">{{ progress.percentage }}%</small>
+                    </div>
+                    <div class="progress mt-2">
+                        <div class="progress-bar bg-primary" style="width: {{ progress.percentage }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ progress.evaluated }} / {{ progress.total }} avaliadas</small>
+                </div>
+
+                <!-- Technical Preview -->
+                <div class="technical-preview" id="technical-preview">
+                    <strong>Preview Técnico:</strong><br>
+                    <span id="tech-info">Carregando...</span>
+                </div>
+
+                <!-- Ratings -->
+                <div class="rating-group">
+                    <label class="form-label fw-bold">Qualidade Geral</label>
+                    <div class="star-rating" data-rating="overall_quality">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="form-label fw-bold">Nitidez Geral</label>
+                    <div class="star-rating" data-rating="global_sharpness">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="form-label fw-bold">Nitidez da Pessoa</label>
+                    <div class="star-rating" data-rating="person_sharpness">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="form-label fw-bold">Qualidade da Exposição</label>
+                    <div class="star-rating" data-rating="exposure_quality">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <label class="form-label fw-bold">Qualidade da Composição</label>
+                    <div class="star-rating" data-rating="composition_quality">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+
+                <!-- Decisions -->
+                <div class="rating-group">
+                    <label class="form-label fw-bold">Decisões de Aprovação</label>
+                    <div class="decision-buttons">
+                        <div class="decision-btn" data-decision="approve_for_portfolio">
+                            <i class="fas fa-trophy"></i> Portfólio
+                        </div>
+                        <div class="decision-btn" data-decision="approve_for_client">
+                            <i class="fas fa-handshake"></i> Cliente
+                        </div>
+                        <div class="decision-btn" data-decision="approve_for_social">
+                            <i class="fas fa-share-alt"></i> Social
+                        </div>
+                        <div class="decision-btn" data-decision="needs_editing">
+                            <i class="fas fa-edit"></i> Precisa Edição
+                        </div>
+                        <div class="decision-btn" data-decision="complete_reject">
+                            <i class="fas fa-trash"></i> Rejeitar
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confidence -->
+                <div class="confidence-slider">
+                    <label class="form-label fw-bold">Nível de Confiança</label>
+                    <input type="range" class="form-range" min="0" max="100" value="90" id="confidence-level">
+                    <div class="text-center">
+                        <small class="text-muted"><span id="confidence-value">90</span>%</small>
+                    </div>
+                </div>
+
+                <!-- Comments -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Comentários (opcional)</label>
+                    <textarea class="form-control" id="comments" rows="3" placeholder="Observações sobre a imagem..."></textarea>
+                </div>
+
+                <!-- Submit -->
+                <div class="submit-section">
+                    <button class="btn btn-primary w-100 mb-2" onclick="submitEvaluation()">
+                        <i class="fas fa-check"></i> Confirmar Avaliação
+                    </button>
+                    <button class="btn btn-outline-secondary w-100" onclick="skipImage()">
+                        <i class="fas fa-forward"></i> Pular Imagem
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hotkeys Help -->
+    <div class="hotkeys-help">
+        <strong>Atalhos:</strong><br>
+        1-5: Rating rápido<br>
+        Q: Rejeitar<br>
+        SPACE: Próxima<br>
+        ←→: Navegar
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let images = {{ images | tojsonfilter }};
+        let currentImageIndex = 0;
+        let evaluationStartTime = Date.now();
+        let currentEvaluation = {
+            ratings: {},
+            decisions: {},
+            confidence_level: 0.9,
+            comments: ''
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (images.length > 0) {
+                loadImage(0);
+                setupEventListeners();
+            }
+        });
+
+        function setupEventListeners() {
+            // Star ratings
+            document.querySelectorAll('.star-rating').forEach(rating => {
+                const stars = rating.querySelectorAll('.star');
+                stars.forEach((star, index) => {
+                    star.addEventListener('click', () => {
+                        const ratingType = rating.dataset.rating;
+                        const value = parseInt(star.dataset.value);
+                        setStarRating(rating, value);
+                        currentEvaluation.ratings[ratingType] = value;
+                    });
+                });
+            });
+
+            // Decision buttons
+            document.querySelectorAll('.decision-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const decision = btn.dataset.decision;
+                    btn.classList.toggle('active');
+                    currentEvaluation.decisions[decision] = btn.classList.contains('active');
+                });
+            });
+
+            // Confidence slider
+            document.getElementById('confidence-level').addEventListener('input', (e) => {
+                const value = e.target.value;
+                document.getElementById('confidence-value').textContent = value;
+                currentEvaluation.confidence_level = value / 100;
+            });
+
+            // Comments
+            document.getElementById('comments').addEventListener('input', (e) => {
+                currentEvaluation.comments = e.target.value;
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'TEXTAREA') return;
+                
+                switch(e.key) {
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                        // Quick rating for overall quality
+                        const overallRating = document.querySelector('[data-rating="overall_quality"]');
+                        setStarRating(overallRating, parseInt(e.key));
+                        currentEvaluation.ratings.overall_quality = parseInt(e.key);
+                        break;
+                    case 'q':
+                    case 'Q':
+                        // Quick reject
+                        const rejectBtn = document.querySelector('[data-decision="complete_reject"]');
+                        rejectBtn.classList.add('active');
+                        currentEvaluation.decisions.complete_reject = true;
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        nextImage();
+                        break;
+                    case 'ArrowLeft':
+                        previousImage();
+                        break;
+                    case 'ArrowRight':
+                        nextImage();
+                        break;
+                }
+            });
+        }
+
+        function setStarRating(ratingElement, value) {
+            const stars = ratingElement.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                if (index < value) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        function loadImage(index) {
+            if (index < 0 || index >= images.length) return;
+            
+            currentImageIndex = index;
+            const image = images[index];
+            
+            // Update image
+            document.getElementById('current-image').src = `/${image.relative_path}`;
+            document.getElementById('image-filename').textContent = image.filename;
+            document.getElementById('current-index').textContent = index + 1;
+            
+            // Update technical preview
+            const techInfo = image.technical_preview || {};
+            document.getElementById('tech-info').innerHTML = `
+                Nitidez: ${techInfo.sharpness?.toFixed(1) || 'N/A'} | 
+                Brilho: ${techInfo.brightness?.toFixed(0) || 'N/A'} | 
+                Pessoas: ${techInfo.person_count || 0} | 
+                Faces: ${techInfo.face_count || 0}
+            `;
+            
+            // Reset evaluation
+            resetEvaluation();
+            evaluationStartTime = Date.now();
+        }
+
+        function resetEvaluation() {
+            // Reset ratings
+            document.querySelectorAll('.star').forEach(star => {
+                star.classList.remove('active');
+            });
+            
+            // Reset decisions
+            document.querySelectorAll('.decision-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Reset other inputs
+            document.getElementById('confidence-level').value = 90;
+            document.getElementById('confidence-value').textContent = '90';
+            document.getElementById('comments').value = '';
+            
+            // Reset evaluation object
+            currentEvaluation = {
+                ratings: {},
+                decisions: {},
+                confidence_level: 0.9,
+                comments: ''
+            };
+        }
+
+        function submitEvaluation() {
+            if (Object.keys(currentEvaluation.ratings).length === 0) {
+                alert('Por favor, avalie pelo menos um aspecto da imagem.');
+                return;
+            }
+            
+            const evaluationTime = Math.round((Date.now() - evaluationStartTime) / 1000);
+            const image = images[currentImageIndex];
+            
+            const evaluationData = {
+                image_filename: image.filename,
+                ratings: currentEvaluation.ratings,
+                decisions: currentEvaluation.decisions,
+                confidence_level: currentEvaluation.confidence_level,
+                evaluation_time_seconds: evaluationTime,
+                comments: currentEvaluation.comments,
+                issues: {} // Can be expanded later
+            };
+            
+            // Send to server
+            fetch('/api/evaluate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(evaluationData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    nextImage();
+                } else {
+                    alert('Erro ao salvar avaliação: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Erro de conexão ao salvar avaliação.');
+            });
+        }
+
+        function nextImage() {
+            if (currentImageIndex < images.length - 1) {
+                loadImage(currentImageIndex + 1);
+            } else {
+                alert('Todas as imagens do lote foram processadas!');
+                window.location.href = '/analytics';
+            }
+        }
+
+        function previousImage() {
+            if (currentImageIndex > 0) {
+                loadImage(currentImageIndex - 1);
+            }
+        }
+
+        function skipImage() {
+            nextImage();
+        }
+
+        function zoomImage(mode) {
+            const img = document.getElementById('current-image');
+            switch(mode) {
+                case 'fit':
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '100%';
+                    break;
+                case '100':
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = 'none';
+                    break;
+                case 'actual':
+                    img.style.maxWidth = 'none';
+                    img.style.maxHeight = 'none';
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>

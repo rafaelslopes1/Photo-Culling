@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Photo Culling Expert System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Arial', sans-serif;
+        }
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .login-body {
+            padding: 40px 30px;
+        }
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            font-size: 16px;
+            width: 100%;
+        }
+        .expert-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .feature-item i {
+            color: #667eea;
+            margin-right: 10px;
+            width: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-camera-retro fa-3x mb-3"></i>
+            <h3>Photo Culling Expert</h3>
+            <p class="mb-0">Sistema de Avaliação v2.0</p>
+        </div>
+        
+        <div class="login-body">
+            <form method="POST">
+                <div class="mb-4">
+                    <label for="evaluator_id" class="form-label fw-bold">
+                        <i class="fas fa-user"></i> Identificação do Especialista
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="evaluator_id" 
+                           name="evaluator_id" 
+                           placeholder="Ex: photographer_expert_001"
+                           required
+                           autocomplete="username">
+                    <div class="form-text">
+                        Use um identificador único e consistente para suas sessões
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Avaliação
+                </button>
+            </form>
+            
+            <div class="expert-info">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-info-circle"></i> Como Funciona
+                </h6>
+                
+                <div class="feature-item">
+                    <i class="fas fa-images"></i>
+                    <span>Avalie imagens usando critérios profissionais</span>
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-star"></i>
+                    <span>Sistema de rating de 1-5 estrelas</span>
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-keyboard"></i>
+                    <span>Atalhos de teclado para avaliação rápida</span>
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-brain"></i>
+                    <span>Suas avaliações treinam a IA do sistema</span>
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Acompanhe seu progresso em tempo real</span>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-shield-alt"></i> 
+                    Suas avaliações são armazenadas de forma segura e anônima
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-focus on input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('evaluator_id').focus();
+        });
+        
+        // Suggest evaluator ID format
+        document.getElementById('evaluator_id').addEventListener('input', function(e) {
+            let value = e.target.value;
+            // Remove special characters except underscore and hyphen
+            value = value.replace(/[^a-zA-Z0-9_-]/g, '');
+            e.target.value = value;
+        });
+    </script>
+</body>
+</html>

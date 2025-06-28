@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Culling Expert System v2.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .hero-section {
+            padding: 60px 0;
+            text-align: center;
+            color: white;
+        }
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-camera-retro"></i> Photo Culling Expert System
+            </div>
+            <h2 class="mb-4">Sistema de Coleta de Expertise v2.0</h2>
+            <p class="lead mb-5">Transforme seu conhecimento fotográfico em inteligência artificial avançada</p>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body p-5">
+                            <h3 class="card-title text-center mb-4">
+                                <i class="fas fa-brain text-primary"></i> 
+                                Bem-vindo ao Futuro da Análise Fotográfica
+                            </h3>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="feature-card text-center">
+                                        <i class="fas fa-eye fa-2x text-primary mb-3"></i>
+                                        <h5>Avaliação Inteligente</h5>
+                                        <p class="text-muted">Interface otimizada para avaliação rápida e precisa de imagens</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="feature-card text-center">
+                                        <i class="fas fa-robot fa-2x text-primary mb-3"></i>
+                                        <h5>Treinamento de IA</h5>
+                                        <p class="text-muted">Suas avaliações treinam modelos de IA cada vez mais precisos</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="feature-card text-center">
+                                        <i class="fas fa-chart-line fa-2x text-primary mb-3"></i>
+                                        <h5>Analytics Avançado</h5>
+                                        <p class="text-muted">Acompanhe suas métricas e padrões de avaliação</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-sign-in-alt"></i> Começar Avaliação
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">
+                            <i class="fas fa-lightbulb text-warning"></i> 
+                            Como Funciona
+                        </h4>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-3 text-center">
+                                <div class="feature-card">
+                                    <div class="badge bg-primary rounded-circle p-3 mb-3">1</div>
+                                    <h6>Login como Especialista</h6>
+                                    <p class="text-muted">Identifique-se para começar suas avaliações</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="feature-card">
+                                    <div class="badge bg-primary rounded-circle p-3 mb-3">2</div>
+                                    <h6>Avalie Imagens</h6>
+                                    <p class="text-muted">Use nossa interface otimizada para avaliação rápida</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="feature-card">
+                                    <div class="badge bg-primary rounded-circle p-3 mb-3">3</div>
+                                    <h6>IA Aprende</h6>
+                                    <p class="text-muted">Suas avaliações treinam automaticamente novos modelos</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="feature-card">
+                                    <div class="badge bg-primary rounded-circle p-3 mb-3">4</div>
+                                    <h6>Resultado</h6>
+                                    <p class="text-muted">Sistema fica mais preciso e eficiente</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

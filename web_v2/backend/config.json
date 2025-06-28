@@ -1,0 +1,105 @@
+{
+    "system": {
+        "version": "2.0_consolidated",
+        "debug": false,
+        "log_level": "INFO"
+    },
+    "paths": {
+        "input_folder": "data/input",
+        "labels_db": "data/labels/labels.db",
+        "features_db": "data/features/features.db",
+        "models_dir": "data/models",
+        "backup_dir": "data/backups"
+    },
+    "processing": {
+        "image_extensions": [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".bmp",
+            ".tiff",
+            ".webp"
+        ],
+        "multiprocessing": {
+            "enabled": true,
+            "max_workers": null,
+            "chunk_size": 4
+        },
+        "quality_thresholds": {
+            "blur_threshold": 25,
+            "brightness_threshold": 40,
+            "contrast_threshold": 20
+        },
+        "quality_weights": {
+            "sharpness": 1.0,
+            "brightness": 1.0,
+            "contrast": 0.5,
+            "color_harmony": 0.3
+        }
+    },
+    "ai": {
+        "enabled": true,
+        "auto_retrain": false,
+        "min_samples_per_class": 10,
+        "confidence_threshold": 0.7,
+        "models": {
+            "default_algorithm": "random_forest",
+            "cross_validation_folds": 3,
+            "test_size": 0.2
+        }
+    },
+    "web_interface": {
+        "host": "localhost",
+        "port": 5002,
+        "debug": true,
+        "auto_ai_suggestions": true,
+        "keyboard_shortcuts": {
+            "quality_1": "1",
+            "quality_2": "2",
+            "quality_3": "3",
+            "quality_4": "4",
+            "quality_5": "5",
+            "reject_blur": "b",
+            "reject_dark": "d",
+            "reject_light": "l",
+            "reject_cropped": "c",
+            "reject_other": "x",
+            "next_image": "space",
+            "prev_image": "backspace",
+            "show_info": "i"
+        }
+    },
+    "output": {
+        "folders": {
+            "selected": "selected",
+            "duplicates": "duplicates",
+            "blurry": "blurry",
+            "low_light": "low_light",
+            "failed": "failed"
+        },
+        "naming": {
+            "add_quality_prefix": true,
+            "add_timestamp": false,
+            "preserve_original": true
+        }
+    },
+    "features": {
+        "basic_enabled": true,
+        "advanced_enabled": true,
+        "face_detection": {
+            "enabled": true,
+            "min_face_size": 30,
+            "confidence_threshold": 0.8
+        },
+        "color_analysis": {
+            "dominant_colors_count": 5,
+            "color_temperature": true,
+            "color_harmony": true
+        },
+        "composition": {
+            "rule_of_thirds": true,
+            "symmetry": true,
+            "edge_density": true
+        }
+    }
+}

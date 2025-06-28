@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Expert Photo Evaluation | Photo Culling v2.0</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Image Panel (70%) -->
+        <div class="image-panel">
+            <div class="progress-container">
+                <div id="progress-text">Carregando...</div>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="nav-controls">
+                <a href="/dashboard" class="nav-btn" style="text-decoration: none;">📊 Stats</a>
+                <button id="prev-btn" class="nav-btn prev">← Anterior</button>
+                <span id="image-counter">0 de 0</span>
+                <button id="next-btn" class="nav-btn next">Próxima →</button>
+            </div>
+            
+            <div class="image-container">
+                <img id="current-image" class="main-image" src="" alt="Imagem para avaliação" />
+                <div class="loading" id="loading-indicator" style="display: none;">
+                    Carregando imagem
+                </div>
+            </div>
+            
+            <div class="image-controls">
+                <button id="zoom-fit-btn" class="control-btn">Ajustar (Z)</button>
+                <button id="zoom-100-btn" class="control-btn">100% (X)</button>
+            </div>
+        </div>
+
+        <!-- Evaluation Panel (30%) -->
+        <div class="evaluation-panel">
+            <div class="panel-header">
+                <h2>🎯 Avaliação Especializada</h2>
+                <div id="image-filename" class="image-filename">Carregando...</div>
+            </div>
+
+            <!-- Quality Ratings -->
+            <div class="rating-section">
+                <h3><span class="section-icon">⭐</span> Avaliações de Qualidade</h3>
+                
+                <div class="rating-item">
+                    <label class="rating-label">Qualidade Geral</label>
+                    <div class="star-rating" data-rating="overall_quality">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-item">
+                    <label class="rating-label">Nitidez Geral</label>
+                    <div class="star-rating" data-rating="global_sharpness">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-item">
+                    <label class="rating-label">Nitidez da Pessoa</label>
+                    <div class="star-rating" data-rating="person_sharpness">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-item">
+                    <label class="rating-label">Qualidade da Exposição</label>
+                    <div class="star-rating" data-rating="exposure_quality">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-item">
+                    <label class="rating-label">Qualidade da Composição</label>
+                    <div class="star-rating" data-rating="composition_quality">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-item">
+                    <label class="rating-label">Impacto Emocional</label>
+                    <div class="star-rating" data-rating="emotional_impact">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                </div>
+
+                <div class="rating-item">
+                    <label class="rating-label">Execução Técnica</label>
+                    <div class="star-rating" data-rating="technical_execution">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categorical Assessments -->
+            <div class="rating-section">
+                <h3><span class="section-icon">💡</span> Avaliações Categóricas</h3>
+                
+                <!-- Environment Lighting -->
+                <div class="rating-item">
+                    <label class="rating-label">Iluminação do Ambiente</label>
+                    <div class="categorical-buttons" data-category="environment_lighting">
+                        <button type="button" class="cat-btn" data-value="muito_escuro">Muito Escuro</button>
+                        <button type="button" class="cat-btn" data-value="levemente_escuro">Lev. Escuro</button>
+                        <button type="button" class="cat-btn" data-value="ideal">Ideal</button>
+                        <button type="button" class="cat-btn" data-value="levemente_claro">Lev. Claro</button>
+                        <button type="button" class="cat-btn" data-value="muito_claro">Muito Claro</button>
+                    </div>
+                </div>
+
+                <!-- Person Lighting -->
+                <div class="rating-item">
+                    <label class="rating-label">Iluminação da Pessoa</label>
+                    <div class="categorical-buttons" data-category="person_lighting">
+                        <button type="button" class="cat-btn" data-value="pessoa_muito_escura">Muito Escura</button>
+                        <button type="button" class="cat-btn" data-value="pessoa_levemente_escura">Lev. Escura</button>
+                        <button type="button" class="cat-btn" data-value="ideal">Ideal</button>
+                        <button type="button" class="cat-btn" data-value="pessoa_levemente_clara">Lev. Clara</button>
+                        <button type="button" class="cat-btn" data-value="pessoa_muito_clara">Muito Clara</button>
+                    </div>
+                </div>
+
+                <!-- Person Sharpness Level -->
+                <div class="rating-item">
+                    <label class="rating-label">Nível de Nitidez da Pessoa</label>
+                    <div class="categorical-buttons" data-category="person_sharpness_level">
+                        <button type="button" class="cat-btn" data-value="muito_nitida">Muito Nítida</button>
+                        <button type="button" class="cat-btn" data-value="nitida">Nítida</button>
+                        <button type="button" class="cat-btn" data-value="levemente_desfocada">Lev. Desfocada</button>
+                        <button type="button" class="cat-btn" data-value="moderadamente_desfocada">Mod. Desfocada</button>
+                        <button type="button" class="cat-btn" data-value="muito_desfocada">Muito Desfocada</button>
+                    </div>
+                </div>
+
+                <!-- Person Position -->
+                <div class="rating-item">
+                    <label class="rating-label">Posição da Pessoa</label>
+                    <div class="categorical-buttons" data-category="person_position">
+                        <button type="button" class="cat-btn" data-value="centralizada">Centralizada</button>
+                        <button type="button" class="cat-btn" data-value="esquerda">Esquerda</button>
+                        <button type="button" class="cat-btn" data-value="direita">Direita</button>
+                        <button type="button" class="cat-btn" data-value="terco_superior">Terço Superior</button>
+                        <button type="button" class="cat-btn" data-value="terco_inferior">Terço Inferior</button>
+                    </div>
+                </div>
+
+                <!-- Eyes Quality -->
+                <div class="rating-item">
+                    <label class="rating-label">Qualidade dos Olhos</label>
+                    <div class="categorical-buttons" data-category="eyes_quality">
+                        <button type="button" class="cat-btn" data-value="muito_nitidos">Muito Nítidos</button>
+                        <button type="button" class="cat-btn" data-value="nitidos">Nítidos</button>
+                        <button type="button" class="cat-btn" data-value="levemente_desfocados">Lev. Desfocados</button>
+                        <button type="button" class="cat-btn" data-value="desfocados">Desfocados</button>
+                        <button type="button" class="cat-btn" data-value="fechados_nao_visiveis">Fechados/N.Visíveis</button>
+                    </div>
+                </div>
+
+                <!-- People Count -->
+                <div class="rating-item">
+                    <label class="rating-label">Número de Pessoas</label>
+                    <div class="categorical-buttons" data-category="people_count">
+                        <button type="button" class="cat-btn" data-value="sem_pessoas">Sem Pessoas</button>
+                        <button type="button" class="cat-btn" data-value="1_pessoa">1 Pessoa</button>
+                        <button type="button" class="cat-btn" data-value="2_pessoas">2 Pessoas</button>
+                        <button type="button" class="cat-btn" data-value="3_5_pessoas">3-5 Pessoas</button>
+                        <button type="button" class="cat-btn" data-value="6_mais_pessoas">6+ Pessoas</button>
+                    </div>
+                </div>
+
+                <!-- Photo Context -->
+                <div class="rating-item">
+                    <label class="rating-label">Contexto da Foto</label>
+                    <div class="categorical-buttons" data-category="photo_context">
+                        <button type="button" class="cat-btn" data-value="interno">Interno</button>
+                        <button type="button" class="cat-btn" data-value="externo">Externo</button>
+                        <button type="button" class="cat-btn" data-value="luz_natural">Luz Natural</button>
+                        <button type="button" class="cat-btn" data-value="luz_artificial">Luz Artificial</button>
+                        <button type="button" class="cat-btn" data-value="contraluz">Contraluz</button>
+                        <button type="button" class="cat-btn" data-value="golden_hour">Golden Hour</button>
+                    </div>
+                </div>
+
+                <!-- Technical Issues -->
+                <div class="rating-item">
+                    <label class="rating-label">Problemas Técnicos (Múltipla Escolha)</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="issue-checkbox" data-issue="ruido_excessivo">
+                            <span>Ruído/Granulação Excessiva</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="issue-checkbox" data-issue="tremido">
+                            <span>Tremido (Motion Blur)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="issue-checkbox" data-issue="foco_no_fundo">
+                            <span>Foco no Fundo</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="issue-checkbox" data-issue="corte_inadequado">
+                            <span>Corte Inadequado da Pessoa</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="issue-checkbox" data-issue="sombras_duras">
+                            <span>Sombras Muito Duras</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="issue-checkbox" data-issue="reflexos_indesejados">
+                            <span>Reflexos Indesejados</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval Decisions -->
+            <div class="rating-section">
+                <h3><span class="section-icon">✅</span> Decisões de Aprovação</h3>
+                
+                <div class="decision-item">
+                    <label class="rating-label">
+                        Aprovar para Portfólio
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="decision-toggle" data-decision="approve_for_portfolio">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+
+                <div class="decision-item">
+                    <label class="rating-label">
+                        Aprovar para Cliente
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="decision-toggle" data-decision="approve_for_client">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+
+                <div class="decision-item">
+                    <label class="rating-label">
+                        Aprovar para Redes Sociais
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="decision-toggle" data-decision="approve_for_social">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+
+                <div class="decision-item">
+                    <label class="rating-label">
+                        Precisa de Edição
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="decision-toggle" data-decision="needs_editing">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+
+                <div class="decision-item">
+                    <label class="rating-label">
+                        Rejeição Completa
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="decision-toggle" data-decision="complete_reject">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Confidence Level -->
+            <div class="rating-section">
+                <h3><span class="section-icon">🎯</span> Nível de Confiança</h3>
+                <input type="range" id="confidence-slider" class="confidence-slider" 
+                       min="0" max="100" value="50" 
+                       oninput="updateConfidenceValue(this.value)">
+                <div id="confidence-value" class="confidence-value">50%</div>
+            </div>
+
+            <!-- Comments -->
+            <div class="rating-section">
+                <h3><span class="section-icon">💬</span> Comentários</h3>
+                <textarea id="comments" class="comments-textarea" 
+                          placeholder="Comentários adicionais sobre a imagem (opcional)..."></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button id="submit-btn" class="action-btn btn-submit">
+                    ✅ Enviar Avaliação
+                </button>
+                <button id="quick-reject-btn" class="action-btn btn-quick-reject">
+                    ❌ Rejeição Rápida (Q)
+                </button>
+                <button id="skip-btn" class="action-btn btn-skip">
+                    ⏭️ Pular
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Help -->
+    <div id="shortcuts-info" class="shortcuts-info">
+        <h4>Atalhos do Teclado</h4>
+        <div class="shortcut-item">
+            <span>Qualidade Rápida</span>
+            <span class="shortcut-key">1-5</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Rejeição Rápida</span>
+            <span class="shortcut-key">Q</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Próxima Imagem</span>
+            <span class="shortcut-key">SPACE</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Navegação</span>
+            <span class="shortcut-key">← →</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Zoom Ajustar</span>
+            <span class="shortcut-key">Z</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Zoom 100%</span>
+            <span class="shortcut-key">X</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Enviar</span>
+            <span class="shortcut-key">Ctrl+Enter</span>
+        </div>
+        <div class="shortcut-item">
+            <span>Ajuda</span>
+            <span class="shortcut-key">?</span>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
