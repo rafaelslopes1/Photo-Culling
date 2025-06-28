@@ -2,8 +2,13 @@
 # Photo Culling System - Automated Analysis Script
 # Executa análise periódica das avaliações manuais
 
+# Sair em caso de erro, tratar variáveis não definidas como erro e propagar o status de saída
+set -euo pipefail
+
 # Configurações
-PROJECT_DIR="/Users/rafaellopes/www/Fotop/Photo-Culling/web_v2"
+# Determina o diretório do projeto como o diretório pai do local do script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 REPORTS_DIR="$PROJECT_DIR/reports"
 LOG_FILE="$PROJECT_DIR/logs/analysis.log"
 
